@@ -6,7 +6,8 @@
 *.lo
 *.o
 *.obj
-
+build/
+CMakeUserPresets.json
 # Precompiled Headers
 *.gch
 *.pch
