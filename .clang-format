@@ -1,0 +1,39 @@
+# Base style on LLVM
+BasedOnStyle: LLVM
+
+# Additional customizations (optional - remove if you want pure LLVM)
+IndentWidth: 2
+TabWidth: 2
+UseTab: Never
+ColumnLimit: 80
+
+# C++ specific settings
+Standard: c++17
+PointerAlignment: Right
+DerivePointerAlignment: false
+
+# Include sorting
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+
+# Spacing
+SpaceAfterCStyleCast: false
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: false
+
+# Breaking
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AlwaysBreakAfterReturnType: None
+AlwaysBreakTemplateDeclarations: Yes
+
+# Braces
+BreakBeforeBraces: Attach
+
+# Comments
+ReflowComments: true
+
+# Namespaces
+CompactNamespaces: false
+FixNamespaceComments: true
