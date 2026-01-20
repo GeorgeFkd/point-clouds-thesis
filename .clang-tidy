@@ -1,0 +1,10 @@
+# Clang-Tidy configuration - Performance checks only
+# Focused on point cloud processing and rendering performance
+
+Checks: >
+  performance-*
+
+# Suppress checks in external libraries
+HeaderFilterRegex: '(src|include)/.*'
+
+FormatStyle: file

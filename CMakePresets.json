@@ -1,0 +1,17 @@
+{
+	"version":2,
+	"configurePresets":[
+		{
+			"name":"vcpkg",
+			"generator":"Ninja",
+			"binaryDir":"${sourceDir}/build",
+			"cacheVariables": {
+				"CMAKE_TOOLCHAIN_FILE":"$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+				"CMAKE_FIND_PACKAGE_PREFER_CONFIG": "ON",
+				"CMAKE_FIND_USE_SYSTEM_PACKAGE_REGISTRY": "OFF",
+				"CMAKE_FIND_USE_PACKAGE_REGISTRY": "OFF",
+				"CMAKE_BUILD_TYPE": "RelWithDebInfo"
+			}
+		}
+	]
+}

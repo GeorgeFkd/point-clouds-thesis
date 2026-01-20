@@ -1,0 +1,27 @@
+{
+  "name": "pointcloud-app",
+  "version": "0.1.0",
+  "description": "Point cloud filtering and rendering application with AI object detection",
+  "dependencies": [
+    {
+      "name": "pcl",
+      "default-features": false,
+      "features": [
+        "visualization",
+        "opengl"
+      ]
+    },
+    {
+      "name": "opencv4",
+      "default-features": false,
+      "features": [
+        "dnn",
+        "jpeg",
+        "png"
+      ]
+    },
+    "eigen3",
+    "boost-system",
+    "boost-filesystem"
+  ]
+}

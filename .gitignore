@@ -40,3 +40,6 @@ CMakeUserPresets.json
 
 # debug information files
 *.dwo
+
+
+build/
