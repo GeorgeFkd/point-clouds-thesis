@@ -237,6 +237,10 @@ class EventBus:
 class Application:
     
     def __init__(self):
+        self.camera = RealsenseCamera()
+        self.detector = ObjectDetector(["face"])
+        self.data_exporter = DataExporter()
+        self.bus = EventBus()
         pass
 
     def display_with_detections(self,*args):
@@ -252,7 +256,7 @@ class Application:
             cv2.putText(preview, "Press B to export BLURRED point cloud", (10, 60),
                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
                 
-                # Display
+            # Display
             preview_bgr = cv2.cvtColor(preview, cv2.COLOR_RGB2BGR)
             cv2.imshow('Face Detection - Press B to Export', preview_bgr)
     
@@ -263,14 +267,13 @@ class Application:
         depth = args[0]
         color = args[1]
         detections = self.detector.detect(depth,color,["face"])
-        timestamp = ""
         if len(detections) > 0:
             print(f"Blurring {len(detections)} detected objects in 2D image...")
             for (_,x1,x2,y1,y2) in detections:
                 color_blurred = Processor2D.gaussian_blur(color,x1,x2,y1,y2)
             print("        ✓ Faces blurred successfully")
         else:
-            print("No faces detected - using original image")
+            print("No specified objects detected - using original image")
             color_blurred = color.copy()
 
         print("Creating 3D point cloud with blurred colors...")
@@ -278,13 +281,11 @@ class Application:
         print(f"Point cloud created ({cloud.n_points} points)")
 
         ply_filename = f"blurred.ply"
-        print(f"Saving to PLY file...")
+        print(f"Saving to PLY file")
         ply_path = self.data_exporter.save_ply(cloud, ply_filename, len(detections))
         print(f"PLY saved at {ply_path}")
 
-        print("Saving preview images...")
-
-        # Blurred version
+        print("Saving blurred image")
         blurred_filename = f"blurred_2d.jpg"
         self.data_exporter.save_jpeg(color_blurred, blurred_filename)
         print(f"        ✓ Blurred 2D: {blurred_filename}")
@@ -315,38 +316,85 @@ class Application:
         print("  R - New random rectangle")
         print("  Q - Quit")
         print()
-        self.camera = RealsenseCamera()
-        self.detector = ObjectDetector(["face"])
-        self.data_exporter = DataExporter()
-        bus = EventBus()
-        bus.on_key('b',lambda *data: print(f"Hello from event bus, {len(data)}"))
-        bus.on_key('b',self.export_blurred)
-        bus.on_key('q',lambda *data: self.quit())
-        bus.on_frame(self.display_with_detections)
+        
+        self.bus.on_key('b',lambda *data: print(f"Hello from event bus, {len(data)}"))
+        self.bus.on_key('b',self.export_blurred)
+        self.bus.on_key('q',lambda *data: self.quit())
+        self.bus.on_frame(self.display_with_detections)
         self.should_continue = True
         try:
             while self.should_continue:
                 depth, color = self.camera.capture_frame()
                 if depth is None:
                     continue
-                bus.new_frame(depth,color)
+                self.bus.new_frame(depth,color)
                 key = cv2.waitKey(1) & 0xFF
-                bus.key_pressed(chr(key),depth,color)
+                self.bus.key_pressed(chr(key),depth,color)
                 
         
         finally:
             cv2.destroyAllWindows()
-    
+    def visualise_pointclouds(self):
+        """Browse PLY files from the output directory, press Enter to cycle through them"""
+        import subprocess
+        import tempfile
+
+        ply_files = sorted(self.data_exporter.output_dir.glob("*.ply"))
+        if not ply_files:
+            print(f"No PLY files found in {self.data_exporter.output_dir}")
+            return
+
+        print("\n=== Point Cloud Viewer ===")
+        print("Press Enter to cycle through PLY files, Ctrl+C to quit")
+        print(f"\nFound {len(ply_files)} PLY file(s) in {self.data_exporter.output_dir}")
+
+        for i, ply_path in enumerate(ply_files):
+            print(f"\n[{i + 1}/{len(ply_files)}] {ply_path.name}")
+            input("Press Enter to view...")
+
+            with tempfile.NamedTemporaryFile(suffix=".pcd", delete=False) as tmp:
+                pcd_path = tmp.name
+
+            viewer_proc = None
+            try:
+                subprocess.run(["pcl_ply2pcd", str(ply_path), pcd_path], check=True)
+                viewer_proc = subprocess.Popen(["pcl_viewer", pcd_path])
+                input("Press Enter to close and continue...")
+                viewer_proc.terminate()
+                viewer_proc.wait()
+            except FileNotFoundError as e:
+                print(f"Error: {e}")
+                print("Make sure pcl_ply2pcd and pcl_viewer are installed and on PATH,other wise compile Point Cloud Library from source and install the executables in the path")
+                return
+            finally:
+                if viewer_proc and viewer_proc.poll() is None:
+                    viewer_proc.terminate()
+                    viewer_proc.wait()
+                Path(pcd_path).unlink(missing_ok=True)
+
     def stop(self):
         # should stop the camera.pipeline.stop()
         print("Pipeline stopped running operations for shutdown")
 
 
+MODES = {
+    "interactive": lambda app: app.interactive_mode(),
+    "visualise": lambda app: app.visualise_pointclouds(),
+}
+
+
 def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Point Cloud Application")
+    parser.add_argument("--app", choices=MODES.keys(), default="interactive",
+                        help="Application mode to run (default: interactive)")
+    args = parser.parse_args()
+
     app = Application()
-    
+
     try:
-        app.interactive_mode()
+        MODES[args.app](app)
     finally:
         app.stop()
 
