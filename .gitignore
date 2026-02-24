@@ -1,6 +1,10 @@
 # Prerequisites
 *.d
 
+venv
+venv312
+.venv
+
 # Compiled Object files
 *.slo
 *.lo
