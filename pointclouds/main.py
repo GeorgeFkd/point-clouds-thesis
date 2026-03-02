@@ -10,7 +10,7 @@ import cv2
 import random
 from pathlib import Path
 from datetime import datetime
-
+import open3d as o3d
 try:
     import pyvista as pv
 
@@ -42,7 +42,6 @@ class RealsenseCamera:
         aligned = self.align.process(frames)
         color_frame = aligned.get_color_frame()
         self.intrinsics = color_frame.profile.as_video_stream_profile().intrinsics
-
     def stop(self):
         self.pipeline.stop()
 
@@ -61,8 +60,8 @@ class RealsenseCamera:
             return None, None
 
         return np.asanyarray(depth_frame.get_data()), np.asanyarray(
-            color_frame.get_data()
-        )
+            color_frame.get_data())
+        
 
     def get_intrinsics(self):
         return self.intrinsics
@@ -305,6 +304,12 @@ class Application:
         self.detector = ObjectDetector(["face"])
         self.data_exporter = DataExporter()
         self.bus = EventBus()
+        self.o3dvis = o3d.visualization.Visualizer()
+        self.o3dvis.create_window(window_name="PC Visualiser",width=640,height=480)
+        self.o3dvis.get_render_option().point_size = 2
+        intr = self.camera.get_intrinsics()
+        self.pinhole_camera_intrinsic = o3d.camera.PinholeCameraIntrinsic(intr.width,intr.height,intr.fx,intr.fy,intr.ppx,intr.ppy)
+        self.init_3d_viewer()
 
     def display_with_detections(self, *args):
         depth = args[0]
@@ -336,6 +341,72 @@ class Application:
         # Display
         preview_bgr = cv2.cvtColor(preview, cv2.COLOR_RGB2BGR)
         cv2.imshow("Face Detection - Press B to Export", preview_bgr)
+    def init_3d_viewer(self):
+        """Initialize the 3D point cloud viewer"""
+        # Create empty point cloud
+        self.pcd = o3d.geometry.PointCloud()
+        self.pcd.points = o3d.utility.Vector3dVector([[0,0,1]])
+        self.pcd.colors = o3d.utility.Vector3dVector([[0,0,0]])
+        # Add to visualizer
+        self.o3dvis.add_geometry(self.pcd)
+    
+        # Setup view control
+        view_control = self.o3dvis.get_view_control()
+        view_control.set_zoom(0.8)
+        view_control.set_front([0, 0, -1])
+        view_control.set_lookat([0, 0, 1])
+        view_control.set_up([0, 1, 0])
+    
+        # Track first frame for reset
+        self.first_frame = True
+    def display_pointcloud(self,*args):
+        depth = args[0]
+        color = args[1]
+        
+        # Create Open3D images
+        o3d_depth = o3d.geometry.Image(depth)
+        o3d_color = o3d.geometry.Image(color)
+        
+        # Create RGBD image
+        depth_scale = 1.0 / self.camera.get_depth_scale()
+        # depth_scale = 1000.0
+        print(f"Depth scale: {depth_scale}")  # Should be ~0.001
+        print(f"Depth min/max: {depth.min()}/{depth.max()}")
+        print(f"Color shape: {color.shape}, dtype: {color.dtype}")
+        print(f"Depth shape: {depth.shape}, dtype: {depth.dtype}")
+        rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            o3d_color,
+            o3d_depth,
+            depth_scale=depth_scale,
+            convert_rgb_to_intensity=False
+        )
+        
+        # Create point cloud from RGBD
+        pcd_new = o3d.geometry.PointCloud.create_from_rgbd_image(
+            rgbd,
+            self.pinhole_camera_intrinsic
+        )
+        
+        # for some reason it needs to be rotated bcs the PC gets displayed upside-down
+        pcd_new.transform([[1, 0, 0, 0],
+                       [0, -1, 0, 0],
+                       [0, 0, -1, 0],
+                       [0, 0, 0, 1]]) 
+        
+        print(f"Points created: {len(pcd_new.points)}") 
+        # Update existing point cloud (don't create new one)
+        self.pcd.points = pcd_new.points
+        self.pcd.colors = pcd_new.colors
+        
+        # Reset view on first frame
+        if self.first_frame:
+            self.o3dvis.reset_view_point(True)
+            self.first_frame = False
+        
+        # Update visualization (MUST include poll_events!)
+        self.o3dvis.update_geometry(self.pcd)
+        self.o3dvis.poll_events()        # ← CRITICAL!
+        self.o3dvis.update_renderer()
 
     def export_blurred(self, *args):
         print("\n" + "=" * 60)
@@ -385,7 +456,7 @@ class Application:
     def quit(self):
         self.should_continue = False
         self.camera.stop()
-
+        self.o3dvis.destroy_window()
     def interactive_mode(self):
         """Interactive mode with live preview and export"""
         print("\n=== Face Detection 2D → Blurred Point Cloud Export ===")
@@ -403,6 +474,7 @@ class Application:
         self.bus.on_key("b", self.export_blurred)
         self.bus.on_key("q", lambda *data: self.quit())
         self.bus.on_frame(self.display_with_detections)
+        self.bus.on_frame(self.display_pointcloud)
         self.should_continue = True
         try:
             while self.should_continue:
