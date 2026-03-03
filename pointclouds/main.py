@@ -4,67 +4,37 @@ Face Detection 2D → Point Cloud 3D with PLY Export (PyVista)
 IMPORTANT: Exports point clouds with BLURRED FACES for privacy
 """
 
+from effects import (
+    EffectsManager,
+    FaceAnnotator,
+    Effect,
+    ColorChange,
+    CubeAdd,
+    PointCloudObjectDetectionEffect,
+    Text3DAdd,
+    SideEffect,
+)
 import pyrealsense2 as rs
 import numpy as np
 import cv2
 import random
 from pathlib import Path
 from datetime import datetime
+import os
 import open3d as o3d
-try:
-    import pyvista as pv
+from camera import RealsenseCamera
 
-    HAS_PYVISTA = True
-    print("✓ PyVista available")
-except ImportError:
-    HAS_PYVISTA = False
-    print("⚠️  PyVista not installed")
-    print("Install: pip install pyvista")
-    exit(1)
+display_session_type = os.getenv("XDG_SESSION_TYPE")
+enable_pointclouds_rendering = display_session_type != "wayland"
+# if display_session_type == "wayland":
+#     print("Wayland session is currently not supported")
+#     print("Use sudo startx and try to run again")
+#     exit(1)
+# elif display_session_type == "x11":
+#     print("x11 session is supported(open3d point cloud rendering)")
+# else:
+#     print("unrecognised session type")
 
-
-class RealsenseCamera:
-    def __init__(self, width=640, height=480, fps=30):
-        self.width = width
-        self.height = height
-
-        self.pipeline = rs.pipeline()
-        config = rs.config()
-        config.enable_stream(rs.stream.depth, width, height, rs.format.z16, fps)
-        config.enable_stream(rs.stream.color, width, height, rs.format.rgb8, fps)
-        profile = self.pipeline.start(config)
-
-        depth_sensor = profile.get_device().first_depth_sensor()
-        self.depth_scale = depth_sensor.get_depth_scale()
-        self.align = rs.align(rs.stream.color)
-
-        frames = self.pipeline.wait_for_frames()
-        aligned = self.align.process(frames)
-        color_frame = aligned.get_color_frame()
-        self.intrinsics = color_frame.profile.as_video_stream_profile().intrinsics
-    def stop(self):
-        self.pipeline.stop()
-
-    def get_depth_scale(self):
-        return self.depth_scale
-
-    def capture_frame(self):
-        """Capture depth and color frames"""
-        frames = self.pipeline.wait_for_frames()
-        aligned = self.align.process(frames)
-
-        depth_frame = aligned.get_depth_frame()
-        color_frame = aligned.get_color_frame()
-
-        if not depth_frame or not color_frame:
-            return None, None
-
-        return np.asanyarray(depth_frame.get_data()), np.asanyarray(
-            color_frame.get_data())
-        
-
-    def get_intrinsics(self):
-        return self.intrinsics
 
 
 class ObjectDetector:
@@ -119,6 +89,7 @@ class ObjectDetector:
                 x2 = min(color.shape[1], x + w + margin)
                 y2 = min(color.shape[0], y + h + margin)
                 results.append((text_label, x1, x2, y1, y2))
+
         frame_resized = cv2.resize(color, (300, 300))
         blob = cv2.dnn.blobFromImage(
             frame_resized, 0.007843, (300, 300), (127.5, 127.5, 127.5), False
@@ -166,13 +137,14 @@ class DataExporter:
         cv2.imwrite(str(filepath), image_bgr, [cv2.IMWRITE_JPEG_QUALITY, 95])
         return filepath
 
-    def save_ply(self, cloud, filename, faces_count=0, binary=False):
+    def save_ply(
+        self, cloud: o3d.geometry.PointCloud, filename: str, faces_count=0, binary=False
+    ):
         """Save point cloud to PLY file with proper RGB colors"""
         filepath = self.output_dir / filename
 
-        # Get points and colors from PyVista cloud
         points = cloud.points
-        colors = cloud["RGB"]
+        colors = cloud.colors
 
         num_points = len(points)
 
@@ -200,7 +172,7 @@ class DataExporter:
                 # Binary data
                 for i in range(num_points):
                     x, y, z = points[i]
-                    r, g, b = colors[i]
+                    r, g, b = (colors[i] * 255).astype(np.uint8)
                     # Pack: 3 floats + 3 unsigned chars
                     data = struct.pack("fffBBB", x, y, z, int(r), int(g), int(b))
                     f.write(data)
@@ -225,7 +197,7 @@ class DataExporter:
                 # Data - write each point with its RGB color
                 for i in range(num_points):
                     x, y, z = points[i]
-                    r, g, b = colors[i]
+                    r, g, b = (colors[i] * 255).astype(np.uint8)
                     f.write(f"{x:.6f} {y:.6f} {z:.6f} {int(r)} {int(g)} {int(b)}\n")
 
         return filepath
@@ -248,6 +220,7 @@ class Processor2D:
 class Processor3D:
     @classmethod
     def create_pointcloud_pyvista(cls, depth, color, depth_scale, intrinsics):
+        assert False
         """Create PyVista point cloud from depth + color"""
         H, W = depth.shape
 
@@ -303,13 +276,56 @@ class Application:
         self.camera = RealsenseCamera()
         self.detector = ObjectDetector(["face"])
         self.data_exporter = DataExporter()
+        self.effects_mgr = EffectsManager()
         self.bus = EventBus()
-        self.o3dvis = o3d.visualization.Visualizer()
-        self.o3dvis.create_window(window_name="PC Visualiser",width=640,height=480)
-        self.o3dvis.get_render_option().point_size = 2
         intr = self.camera.get_intrinsics()
-        self.pinhole_camera_intrinsic = o3d.camera.PinholeCameraIntrinsic(intr.width,intr.height,intr.fx,intr.fy,intr.ppx,intr.ppy)
-        self.init_3d_viewer()
+
+        self.pinhole_camera_intrinsic = o3d.camera.PinholeCameraIntrinsic(
+                intr.width, intr.height, intr.fx, intr.fy, intr.ppx, intr.ppy
+            )
+        if enable_pointclouds_rendering:
+            self.o3dvis = o3d.visualization.Visualizer()
+            self.o3dvis.create_window(
+                window_name="PC Visualiser", width=640, height=480
+            )
+            self.o3dvis.get_render_option().point_size = 2
+            
+            self.init_3d_viewer()
+    
+
+    def test_classification(self):
+        print("Testing classification")
+        pointcloud = o3d.io.read_point_cloud("example-faces.ply")
+        self.effects_mgr.add_effect_producer(PointCloudObjectDetectionEffect())
+        effects = self.effects_mgr.create_effects(pointcloud)
+        self.print_effects(effects)
+    def print_effects(self,effects):
+        for effect in effects:
+            if isinstance(effect, ColorChange):
+                x, y, w, h = effect.bbox
+                r, g, b = effect.color
+                print(f"ColorChange: bbox=({x}, {y}, {w}, {h}), color=({r}, {g}, {b})")
+            elif isinstance(effect, Text3DAdd):
+                print(
+                    f"Text3DAdd: text='{effect.text}', position={effect.position}, size={effect.size}, color={effect.color}"
+                )
+            elif isinstance(effect, CubeAdd):
+                print(
+                    f"CubeAdd: center={effect.center}, size={effect.size}, color={effect.color}, rotation={effect.rotation}"
+                )
+            elif isinstance(effect, SideEffect):
+                print(f"SideEffect: (does nothing)")
+    def test_effects(self):
+        print("testing effects")
+        self.effects_mgr.add_effect_producer(FaceAnnotator())
+        pointcloud = o3d.io.read_point_cloud(
+            "../output_blurred/blurred_faces_20260218_165613_binary.ply"
+        )
+        effects = self.effects_mgr.create_effects(pointcloud)
+        self.print_effects(effects)
+        print(f"{len(effects)} effects created.")
+        self.data_exporter.save_ply(pointcloud, "testing_effects.ply")
+        self.quit()
 
     def display_with_detections(self, *args):
         depth = args[0]
@@ -341,71 +357,69 @@ class Application:
         # Display
         preview_bgr = cv2.cvtColor(preview, cv2.COLOR_RGB2BGR)
         cv2.imshow("Face Detection - Press B to Export", preview_bgr)
+
     def init_3d_viewer(self):
         """Initialize the 3D point cloud viewer"""
         # Create empty point cloud
         self.pcd = o3d.geometry.PointCloud()
-        self.pcd.points = o3d.utility.Vector3dVector([[0,0,1]])
-        self.pcd.colors = o3d.utility.Vector3dVector([[0,0,0]])
+        self.pcd.points = o3d.utility.Vector3dVector([[0, 0, 1]])
+        self.pcd.colors = o3d.utility.Vector3dVector([[0, 0, 0]])
         # Add to visualizer
         self.o3dvis.add_geometry(self.pcd)
-    
         # Setup view control
         view_control = self.o3dvis.get_view_control()
         view_control.set_zoom(0.8)
         view_control.set_front([0, 0, -1])
         view_control.set_lookat([0, 0, 1])
         view_control.set_up([0, 1, 0])
-    
+
         # Track first frame for reset
         self.first_frame = True
-    def display_pointcloud(self,*args):
-        depth = args[0]
-        color = args[1]
-        
-        # Create Open3D images
+    
+
+    def convert_frame_to_o3d_pointcloud(self,depth,color)->o3d.geometry.PointCloud:
         o3d_depth = o3d.geometry.Image(depth)
         o3d_color = o3d.geometry.Image(color)
-        
-        # Create RGBD image
+
         depth_scale = 1.0 / self.camera.get_depth_scale()
         # depth_scale = 1000.0
-        print(f"Depth scale: {depth_scale}")  # Should be ~0.001
-        print(f"Depth min/max: {depth.min()}/{depth.max()}")
-        print(f"Color shape: {color.shape}, dtype: {color.dtype}")
-        print(f"Depth shape: {depth.shape}, dtype: {depth.dtype}")
+        # print(f"Depth scale: {depth_scale}")  # Should be ~0.001
+        # print(f"Depth min/max: {depth.min()}/{depth.max()}")
+        # print(f"Color shape: {color.shape}, dtype: {color.dtype}")
+        # print(f"Depth shape: {depth.shape}, dtype: {depth.dtype}")
         rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
             o3d_color,
             o3d_depth,
             depth_scale=depth_scale,
-            convert_rgb_to_intensity=False
+            convert_rgb_to_intensity=False,
         )
-        
-        # Create point cloud from RGBD
+
         pcd_new = o3d.geometry.PointCloud.create_from_rgbd_image(
-            rgbd,
-            self.pinhole_camera_intrinsic
+            rgbd, self.pinhole_camera_intrinsic
         )
+        return pcd_new
         
+    def display_pointcloud(self, *args):
+        depth = args[0]
+        color = args[1]
+        pcd_new = self.convert_frame_to_o3d_pointcloud(depth,color)
+
         # for some reason it needs to be rotated bcs the PC gets displayed upside-down
-        pcd_new.transform([[1, 0, 0, 0],
-                       [0, -1, 0, 0],
-                       [0, 0, -1, 0],
-                       [0, 0, 0, 1]]) 
-        
-        print(f"Points created: {len(pcd_new.points)}") 
-        # Update existing point cloud (don't create new one)
+        pcd_new.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
+
+        print(f"Points created: {len(pcd_new.points)}")
+        # don't create new one
         self.pcd.points = pcd_new.points
         self.pcd.colors = pcd_new.colors
-        
+
         # Reset view on first frame
         if self.first_frame:
             self.o3dvis.reset_view_point(True)
             self.first_frame = False
-        
-        # Update visualization (MUST include poll_events!)
+
+        # should include poll_events to render
         self.o3dvis.update_geometry(self.pcd)
-        self.o3dvis.poll_events()        # ← CRITICAL!
+        self.o3dvis.poll_events()
         self.o3dvis.update_renderer()
 
     def export_blurred(self, *args):
@@ -417,21 +431,20 @@ class Application:
         detections = self.detector.detect(depth, color, ["face"])
         if len(detections) > 0:
             print(f"Blurring {len(detections)} detected objects in 2D image...")
+            color_blurred = color
             for _, x1, x2, y1, y2 in detections:
-                color_blurred = Processor2D.gaussian_blur(color, x1, x2, y1, y2)
+                color_blurred = Processor2D.gaussian_blur(color_blurred, x1, x2, y1, y2)
             print("        ✓Objects blurred successfully")
         else:
             print("No specified objects detected - using original image")
-            color_blurred = color.copy()
+            color_blurred = color
 
         print("Creating 3D point cloud with blurred colors...")
-        cloud = Processor3D.create_pointcloud_pyvista(
+        cloud = self.convert_frame_to_o3d_pointcloud(
             depth,
             color_blurred,
-            self.camera.get_depth_scale(),
-            self.camera.get_intrinsics(),
         )
-        print(f"Point cloud created ({cloud.n_points} points)")
+        # print(f"Point cloud created ({cloud.n_points} points)")
 
         ply_filename = f"blurred.ply"
         print(f"Saving to PLY file")
@@ -445,7 +458,7 @@ class Application:
 
         print("\n📦 EXPORT COMPLETE!")
         print(f"   PLY file: {ply_filename}")
-        print(f"   Points: {cloud.n_points}")
+        print(f"   Points: {len(cloud.points)}")
         print(f"   Objects blurred: {len(detections)}")
         print(f"   ⚠️  IMPORTANT: Objects are BLURRED in the point cloud!")
         print("=" * 60 + "\n")
@@ -457,6 +470,7 @@ class Application:
         self.should_continue = False
         self.camera.stop()
         self.o3dvis.destroy_window()
+
     def interactive_mode(self):
         """Interactive mode with live preview and export"""
         print("\n=== Face Detection 2D → Blurred Point Cloud Export ===")
@@ -474,12 +488,13 @@ class Application:
         self.bus.on_key("b", self.export_blurred)
         self.bus.on_key("q", lambda *data: self.quit())
         self.bus.on_frame(self.display_with_detections)
-        self.bus.on_frame(self.display_pointcloud)
+        if enable_pointclouds_rendering:
+            self.bus.on_frame(self.display_pointcloud)
         self.should_continue = True
         try:
             while self.should_continue:
-                depth, color = self.camera.capture_frame()
-                if depth is None:
+                success,depth, color = self.camera.read_frame()
+                if not success:
                     continue
                 self.bus.new_frame(depth, color)
                 key = cv2.waitKey(1) & 0xFF
@@ -538,6 +553,8 @@ class Application:
 MODES = {
     "interactive": lambda app: app.interactive_mode(),
     "visualise": lambda app: app.visualise_pointclouds(),
+    "test_effects": lambda app: app.test_effects(),
+    "test_classification": lambda app: app.test_classification()
 }
 
 
