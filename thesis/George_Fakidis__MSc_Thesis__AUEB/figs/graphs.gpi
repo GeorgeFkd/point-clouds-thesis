@@ -1,0 +1,32 @@
+# Produce graphs by executing the command 'gnuplot graphs.gpi' on a linux terminal
+
+# Then, the eps files are converted to pdf by 'epstopdf file.eps'
+
+
+set terminal postscript eps enhanced 13
+#set size 0.52,0.52
+#set pointsize 1.3
+
+set xlabel "FANOUT"
+set ylabel "TTL"
+
+set ticslevel 0
+
+set view 46,339
+
+#set key top right invert
+
+set size 0.8,0.8
+set output "complete.eps"
+splot "push_n10K.hit" using 1:2:5 notitle with linespoints pt 7 lt 2
+
+set size 0.65,0.65
+set output "redundant.eps"
+#set zlabel "REDUNDANT MSGS"
+splot "push_n10K.hit" using 1:2:($11/$4) notitle with linespoints pt 7 lt 2
+
+set size 0.65,0.65
+set output "hitratio.eps"
+#set zlabel "HIT RATIO"
+splot "push_n10K.hit" using 1:2:($7/$4+$5) notitle with linespoints pt 7 lt 2
+

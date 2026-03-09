@@ -1,0 +1,198 @@
+%% LLT: Turn off some annoying warnings...
+\RequirePackage{silence}
+\WarningFilter{titlesec}{Non standard sectioning command}
+\WarningFilter{scrreprt}{Usage of package}
+\WarningFilter{scrreprt}{Activating an ugly workaround}
+
+% **************************************************
+% Document Class Definition
+% **************************************************
+\documentclass[%
+    paper=A4,                   % paper size --> A4 is default in Germany
+    twoside=true,               % one side or two side printing
+    openright,                  % double page cleaning ends up right side
+    parskip=full,               % spacing value / method for paragraphs
+    chapterprefix=true,         % prefix for chapter marks
+    11pt,                       % font size
+    headings=normal,            % size of headings
+    bibliography=totoc,         % include bib in toc
+    listof=totoc,               % include list of entries in toc
+    titlepage=on,               % own page for each title page
+    captions=tableabove,        % display table captions above the float env
+    draft=false,                % value for draft version
+]{scrreprt}%
+
+% **************************************************
+% Debug LaTeX Information
+% **************************************************
+%\listfiles
+
+% **************************************************
+% Information and Commands for Reuse
+% **************************************************
+\newcommand{\thesisTitle}{AI-Based Object Detection on PointCloud for privacy awareness}
+\newcommand{\thesisAuthor}{Ioannis Papadopoulos}
+\newcommand{\thesisSubject}{Documentation}
+\newcommand{\thesisDate}{December 2020}
+%\newcommand{\thesisVersion}{My First Draft}
+
+\newcommand{\thesisSupervisor}{John Smith}
+\newcommand{\thesisSupervisorTitle}{Prof.}
+\newcommand{\thesisSupervisorUniversity}{\protect{Athens University of Economics and Business}}
+\newcommand{\thesisSupervisorDepartment}{\protect{Department of Informatics}}
+
+\newcommand{\thesisReviewerOne}{Steve C. Doe}
+\newcommand{\thesisReviewerOneTitle}{Assoc. Prof.}
+\newcommand{\thesisReviewerOneUniversity}{\protect{Athens University of Economics and Business}}
+\newcommand{\thesisReviewerOneDepartment}{\protect{Department of Informatics}}
+
+\newcommand{\thesisReviewerTwo}{Richard Miles}
+\newcommand{\thesisReviewerTwoTitle}{Asst. Prof.}
+\newcommand{\thesisReviewerTwoUniversity}{\protect{University of Athens}}
+\newcommand{\thesisReviewerTwoDepartment}{\protect{Department of Informatics and Telecommunications}}
+
+\newcommand{\thesisUniversity}{\protect{Athens University of Economics and Business}}
+\newcommand{\thesisUniversityDepartment}{Department of Informatics}
+\newcommand{\thesisUniversityInstitute}{School of Information Sciences and Technology}
+\newcommand{\thesisUniversityGroup}{Mobile Multimedia Laboratory}
+\newcommand{\thesisUniversityCity}{Athens, Greece}
+
+% **************************************************
+% Load and Configure Packages
+% **************************************************
+
+\usepackage[utf8]{inputenc}     % defines file's character encoding
+\usepackage[greek,english]{babel} % babel system, adjust the language of the content
+\usepackage{alphabeta}
+
+
+\usepackage[                    % clean thesis style
+    figuresep=colon,%
+    sansserif=false,%
+    hangfigurecaption=false,%
+    hangsection=true,%
+    hangsubsection=true,%
+    colorize=full,%
+    colortheme=bluemagenta,%
+% LLT: Use biber if using UTF8 encoding
+%   bibsys=bibtex,%
+    bibsys=biber,%
+    bibfile=refs,%
+    bibstyle=alphabetic,%
+]{cleanthesis}
+
+\hypersetup{                    % setup the hyperref-package options
+    pdftitle={\thesisTitle},    %   - title (PDF meta)
+    %pdfsubject={\thesisSubject},%  - subject (PDF meta)
+    pdfauthor={\thesisAuthor},    %   - author (PDF meta)
+    plainpages=false,           %   -
+    colorlinks=false,           %   - colorize links?
+    pdfborder={0 0 0},          %   -
+    breaklinks=true,            %   - allow line break inside links
+    bookmarksnumbered=true,     %
+    bookmarksopen=true          %
+}
+
+\usepackage{acronym}
+\usepackage{libertine}
+
+
+% **************************************************
+% Document CONTENT
+% **************************************************
+\begin{document}
+% --------------------------
+% rename document parts
+% --------------------------
+%\renewcaptionname{ngerman}{\figurename}{Abb.}
+%\renewcaptionname{ngerman}{\tablename}{Tab.}
+\renewcaptionname{english}{\figurename}{Fig.}
+\renewcaptionname{english}{\tablename}{Tab.}
+
+% --------------------------
+% Front matter
+% --------------------------
+\pagenumbering{roman}           % roman page numbing (invisible for empty page style)
+\pagestyle{empty}               % no header or footers
+\input{content/titlepages}      % INCLUDE: all titlepages
+\cleardoublepage
+
+\pagestyle{plain}               % display just page numbers
+\input{content/abstract}        % INCLUDE: the abstracts (english and greek)
+\addcontentsline{toc}{chapter}{Abstract}
+\cleardoublepage
+%
+\input{content/acknowledgements} % INCLUDE: acknowledgement
+\addcontentsline{toc}{chapter}{Acknowledgements}
+\cleardoublepage
+%
+
+\setcounter{tocdepth}{2}        % define depth of toc
+\tableofcontents                % display table of contents
+\cleardoublepage
+
+% --------------------------
+% Body matter
+% --------------------------
+\pagenumbering{arabic}          % arabic page numbering
+\setcounter{page}{1}            % set page counter
+\pagestyle{maincontentstyle}    % fancy header and footer
+
+\input{content/01-introduction} % INCLUDE: introduction
+\input{content/02-related-work} % INCLUDE: related work
+\input{content/03-system}   % INCLUDE: system
+\input{content/04-evaluation} % INCLUDE: concepts
+\input{content/05-conclusions} % INCLUDE: conclusion
+\cleardoublepage
+
+
+
+
+% --------------------------
+% Back matter
+% --------------------------
+\let\cleardoublepage\clearpage
+
+{
+  \setstretch{1.3}
+  \renewcommand{\bibfont}{\normalfont\small}
+  \setlength{\biblabelsep}{0pt}
+  \setlength{\bibitemsep}{0.5\baselineskip plus 0.5\baselineskip}
+  \printbibliography[]
+  %\printbibliography[nottype=online]
+  %\printbibliography[heading=subbibliography,title={Websites},type=online,prefixnumbers={@}]
+}
+
+
+
+\chapter*{List of Acronyms}
+\pdfbookmark[0]{Acronym}{Acronym}
+\addcontentsline{toc}{chapter}{List of Acronyms}
+\label{sec:acronym}
+\input{content/acronym}
+
+
+
+\chapter*{\listfigurename}
+\addcontentsline{toc}{chapter}{\listfigurename}
+\renewcommand{\listfigurename}{\vspace{-2.5cm}}
+\listoffigures
+
+
+\chapter*{\listtablename}
+\addcontentsline{toc}{chapter}{\listtablename}
+\renewcommand{\listtablename}{\vspace{-2.5cm}}
+\listoftables
+
+\listofalgorithms
+
+%\input{content/declaration}
+%\clearpage
+
+%\newpage
+%\mbox{}
+
+% **************************************************
+% End of Document CONTENT
+% **************************************************
+\end{document}

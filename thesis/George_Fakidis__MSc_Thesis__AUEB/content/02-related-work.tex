@@ -1,0 +1,99 @@
+% !TEX root = ../thesis-example.tex
+%
+\chapter{Background and Related Work}
+\label{sec:related}
+
+% \Blindtext[2][1]
+
+\section{Background}
+
+\label{sec:related:sec1}
+
+% \Blindtext[2][1]
+
+\subsection{Background Information and Terminology}
+\par Point clouds are a set of three dimensional points in the form of (x,y,z)
+where z is the depth within the two-dimensional image.(Can put a reference from standards that define point clouds,
+and also include the simple taxonomy in the standards.)
+Point clouds are captured using specialized devices called X that do this in order to provide the 3rd dimension of the points. They are currently used in X,Y,Z scenarios(modern cars).
+\par Object detection is a domain of computer vision that attempts to classify objects within an image and give their bounds. This is useful in scenarios such as X,Y,Z.
+\par Face detection is a specific case of object detection that is useful in different scenarios. Not to be confused with face recognition, which is about associating a face scan with an existing person in a face recognition database. In that domain there is more focus about extracting facial features and trying to discern different faces. In this work we only explore object and face detection. (Exact text: Face recognition is deﬁned as a process to identify or verify a person’s identity by
+
+comparing the input face characteristics against known faces from
+
+a database.)
+\par Privacy is about X(probs from wikipedia, does not need a formal reference).
+\par Voxels are that X thing used in point clouds for reasons x,y,z(mostly to reduce sparseness, group close points, and reduce size).
+
+\par Some general AI terms here just for completeness.
+
+\par Add some extra images.
+\label{sec:related:sec11}
+
+% \Blindtext[1][1]
+
+\subsection{Object detection in point clouds}
+Object detection in \ac{PC}s imposes extra constraints on the AI architectures developed for learning based
+tasks. Order should not change the result of the network, Transformations neither(rotation,translation).
+Point clouds, especially those captured by Lidar cameras are especially sparse and this should be taken
+into account when designing a methodology.
+\par Foundational work in object detection for \ac{PC}s has been done in \cite{PointNet: Deep Learning...}.
+In this work the authors introduce PointNet, a neural network architecture that operates on \ac{PC}s
+and not some other derivative form as we will see in other approaches.
+
+\par The authors of PointNet did extra work on the architecture in \cite{PointNet++: ...} where they introduce an enhanced version of it, called PointNet++. In this work they did X,Y,Z.
+
+\par In \cite{VoxelNet: End-to-End...} the authors take a different approach and instead of raw-point clouds their model, VoxelNet, uses voxels as the data representation. More specifically they do this and that.
+
+\par In \cite{PointRCNN...} the authors do those things.
+
+\par The work on \cite{Dynamic Graph CNN ...} introduces a new neural network architecture for point clouds. They introduce that concept and the other concept and that other concept.
+
+\PAR The work in \cite{Point-GNN} introduces a graph neural network that does this and that.
+
+\par the work in \cite{3d object detection with pointformer ...} introduces PointFormer an architecture that does those things.
+
+\par The work in \cite{Center-based...} introduces CenterPoint, an architecture based on the X,Y,Z concepts.
+\par Another work that uses the Voxel-based approach is \cite{Voxel R-CNN...} where the authors utilize the R-CNN architecture for learning tasks on point clouds.
+
+\label{sec:related:sec12}
+
+\subsection{Person/Face detection in point clouds}
+It is basically about taking existing models and training them on more
+specific datasets and changing slightly the architecture to accomodate the specific use case.
+In \cite{Person-MinkUNet...} the authors focus on identifying peopel for LiDAR point clouds.
+
+
+\subsection{Datasets for point clouds object detection}
+Some information regarding the general form of the datasets. For face detection extra processes are required to get
+access to the datasets. Datasets containing faces are mostly for tasks such as face recognition, pose estimation and other tasks that require more tuning than conventional object detection. They differ significantly from object detection datasets as they already have cropped and aligned the faces in the data without leaving the rest of the background intact.
+
+Most datasets for object detection in point clouds are for scenarios involving self-driving vehicles and are captured by LiDAR devices. They have pedestrians as a category but not faces.
+
+In \cite{Vision meets robotics ...} they present the kitti dataset.
+In \cite{BDD100K...} the dataset contains...
+In \cite{One million scenes ...} they present the once dataset
+In \cite{Argoverse 2...} they present the dataset ArgoV2 where...
+
+
+% \Blindtext[1][1]
+
+\section{Related Work}
+\cite{A real time framework for face detection but in CCTV}
+Commercial software found at: \url{https://www.riegl.com}
+and at \url{https://www.celantur.com/}.
+
+\label{sec:related:sec2}
+
+% \Blindtext[1][1]
+
+\begin{figure}[htb]
+	\includegraphics[width=\textwidth]{figs/hitratio.pdf}
+	\caption{Caption...}
+	\label{fig:related:2}
+\end{figure}
+
+% \Blindtext[1][1]
+
+%\section{Conclusion}
+%\label{sec:related:conclusion}
