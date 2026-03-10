@@ -10,10 +10,12 @@ from effects import (
     Effect,
     ColorChange,
     CubeAdd,
+    MMDet3DObjectDetectionEffect,
     PointCloudObjectDetectionEffect,
     Text3DAdd,
     SideEffect,
 )
+from models import Learning3dDetector
 import pyrealsense2 as rs
 import numpy as np
 import cv2
@@ -501,7 +503,8 @@ class Application:
                 self.bus.key_pressed(chr(key), depth, color)
 
         finally:
-            cv2.destroyAllWindows()
+            print("Should clear up resources")
+            # cv2.destroyAllWindows()
 
     def visualise_pointclouds(self):
         """Browse PLY files from the output directory, press Enter to cycle through them"""
@@ -561,14 +564,14 @@ MODES = {
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="Point Cloud Application")
+    parser = argparse.ArgumentParser(description="Point Cloud Application",exit_on_error=False)
     parser.add_argument(
         "--app",
         choices=MODES.keys(),
         default="interactive",
         help="Application mode to run (default: interactive)",
     )
-    args = parser.parse_args()
+    args,unknown = parser.parse_known_args()
 
     app = Application()
 

@@ -4,7 +4,7 @@
 venv
 venv312
 .venv
-
+__pycache__
 # Compiled Object files
 *.slo
 *.lo

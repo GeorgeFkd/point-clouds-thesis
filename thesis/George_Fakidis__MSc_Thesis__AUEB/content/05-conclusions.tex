@@ -3,18 +3,18 @@
 \chapter{Conclusions}
 \label{sec:conclusions}
 
+\section{Limitations}
 
-\Blindtext[1][1]
+\par The 3D Object Detection python ecosystem is not that mature yet.
+There are great but unmaintained projects unsuitable for software in production environments.
+More specifically, python versions are outdated, only specific versions of packages are supported.
+Pretrained and actually useful models are rare in contrast to 2D where for example opencv offers
+out of the box several object and face detection modules.
 
+\par Face detection as a specific task is not that popular in Point cloud related settings. Mostly pedestrians in an outdoor setting are actually the target of the latest models. There has been more focus in face recognition tasks as point clouds can provide richer features of a face than the two-dimensional equivalent and can therefore improve the effectiveness of face recognition systems.
 
-As we see in Equation~\ref{equ:test}, this theory rocks\ldots
-$\int_0^\infty{\frac{x^4}{1+\frac{3}{x}}}=2+i$
-\[\int_0^\infty{\frac{x^4}{1+\frac{3}{x}}}=2+i\]
+\par Most of the attention is on traffic settings, other use cases remain mostly unexplored e.g. indoors 3D cameras.
+In \cite{wang_voxel-rcnn-complex_2022} the authors improve upon an existing model to make it more suitable for complex traffic conditions.
+\section{Discussion}
 
-\begin{equation}
- \int_0^\infty{\frac{x^4}{1+\frac{3}{x}}}=2+i
- \label{equ:test}
-\end{equation}
-
-
-\Blindtext[2][1]
+\section{Future Work}

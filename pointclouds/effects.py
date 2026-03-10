@@ -4,11 +4,7 @@ import numpy.typing as npt
 import open3d as o3d
 from typing import Union, Tuple, List
 from dataclasses import dataclass
-import torch
-
-
-from learning3d.learning3d.models import PointNet
-from learning3d.learning3d.models import Classifier
+from models import Learning3dDetector
 import os
 @dataclass
 class ColorChange:
@@ -89,130 +85,70 @@ class EffectsManager:
 
 
 
-class PointCloudClassifier:
-    """Classify objects in point clouds using Learning3D PointNet"""
+
+class MMDet3DObjectDetectionEffect(EffectProducer):
+    """Effect producer using MMDetection3D for 3D object detection"""
     
     def __init__(self):
-        device = "cpu"
-        model_path = "/home/georgefkd/programming/learning3d/learning3d/pretrained/exp_classifier/models/best_model.t7"
-        self.device = torch.device(device if torch.cuda.is_available() else 'cpu')
-        print(f"Device is: {self.device}")
-        ptnet = PointNet(emb_dims=1024, use_bn=True,input_shape="bcn")
-        self.model = Classifier(feature_model=ptnet, num_classes=40)  # ModelNet40 classes
+        pass
+        # self.detector = IMVoxelNetDetector()
+    
+    def apply(self, pointcloud: o3d.geometry.PointCloud) -> List[Effect]:
+        effects = []
         
-        # Load pretrained weights
-        if model_path and os.path.isfile(model_path):
-            self.model.load_state_dict(torch.load(model_path, map_location=self.device))
-            print(f"✓ Loaded model from {model_path}")
+        # Detect objects in point cloud
+        result = self.detector.classify(pointcloud)
         
-        self.model.to(self.device)
-        self.model.eval()
+        if result is None:
+            return effects
         
-        # ModelNet40 class names
-        self.class_names = [
-            'airplane', 'bathtub', 'bed', 'bench', 'bookshelf', 'bottle', 'bowl',
-            'car', 'chair', 'cone', 'cup', 'curtain', 'desk', 'door', 'dresser',
-            'flower_pot', 'glass_box', 'guitar', 'keyboard', 'lamp', 'laptop',
-            'mantel', 'monitor', 'night_stand', 'person', 'piano', 'plant',
-            'radio', 'range_hood', 'sink', 'sofa', 'stairs', 'stool', 'table',
-            'tent', 'toilet', 'tv_stand', 'vase', 'wardrobe', 'xbox'
+        # Extract predictions
+        pred_instances = result.pred_instances_3d
+        boxes_3d = pred_instances.bboxes_3d.tensor.cpu().numpy()
+        scores_3d = pred_instances.scores_3d.cpu().numpy()
+        labels_3d = pred_instances.labels_3d.cpu().numpy()
+        
+        # Class names
+        class_names = [
+            'bed', 'table', 'sofa', 'chair', 'toilet',
+            'desk', 'dresser', 'night_stand', 'bookshelf', 'bathtub'
         ]
-    
-    def preprocess_pointcloud(self, pcd: o3d.geometry.PointCloud, num_points=2048):
-        """Convert Open3D point cloud to PointNet input"""
-        points = np.asarray(pcd.points)
         
-        if len(points) == 0:
-            return None
-        print("Points are: ",len(pcd.points))
-        # Randomly sample or downsample to fixed number of points
-        if len(points) > num_points:
-            indices = np.random.choice(len(points), num_points, replace=False)
-            points = points[indices]
-        elif len(points) < num_points:
-            # Upsample by repeating points
-            indices = np.random.choice(len(points), num_points, replace=True)
-            points = points[indices]
-        
-        # Normalize to unit sphere
-        centroid = np.mean(points, axis=0)
-        points = points - centroid
-        max_dist = np.max(np.sqrt(np.sum(points**2, axis=1)))
-        if max_dist > 0:
-            points = points / max_dist
-        
-        # Convert to torch tensor (shape: 1, 3, N)
-        points_tensor = torch.from_numpy(points.T).float().unsqueeze(0)
-        
-        return points_tensor
-    
-    def classify(self, pcd: o3d.geometry.PointCloud):
-        """
-        Classify a point cloud
-        
-        Returns:
-            (class_name, confidence)
-        """
-        
-        points_tensor = self.preprocess_pointcloud(pcd)
-        print("Tensor shape is: ",points_tensor.shape)
-        if points_tensor is None:
-            return None, 0.0
-        
-        points_tensor = points_tensor.to(self.device)
-        
-        with torch.no_grad():
-            #throws error [1,3,1024]
-            print("Point Shape is:" ,points_tensor.shape)
-            logits = self.model(points_tensor)
-            probs = torch.softmax(logits, dim=1)
-            confidence, pred_class = torch.max(probs, dim=1)
-        
-        class_idx = pred_class.item()
-        confidence_val = confidence.item()
-        class_name = self.class_names[class_idx]
-        
-        return class_name, confidence_val
-    
-    def classify_segments(self, pcd: o3d.geometry.PointCloud, bboxes):
-        """
-        Classify multiple segmented regions in point cloud
-        
-        Args:
-            pcd: Full point cloud
-            bboxes: List of bounding boxes [(x, y, w, h), ...]
-        
-        Returns:
-            List of (class_name, confidence) for each bbox
-        """
-        results = []
-        points = np.asarray(pcd.points)
-        
-        for (x, y, w, h) in bboxes:
-            # Extract points within bbox (rough 2D projection)
-            mask = (points[:, 0] >= x) & (points[:, 0] <= x + w) & \
-                   (points[:, 1] >= y) & (points[:, 1] <= y + h)
+        # Create effects for each detection
+        for i in range(len(boxes_3d)):
+            x, y, z, w, h, d, yaw = boxes_3d[i]
+            confidence = scores_3d[i]
+            label_id = int(labels_3d[i])
             
-            if np.sum(mask) < 10:  # Too few points
-                results.append(("unknown", 0.0))
+            if confidence < 0.3:  # Confidence threshold
                 continue
             
-            # Create sub-point cloud
-            sub_pcd = o3d.geometry.PointCloud()
-            sub_pcd.points = o3d.utility.Vector3dVector(points[mask])
+            class_name = class_names[label_id] if label_id < len(class_names) else 'unknown'
             
-            # Classify
-            class_name, confidence = self.classify(sub_pcd)
-            results.append((class_name, confidence))
+            # Add bounding cube
+            effects.append(CubeAdd(
+                center=(float(x), float(y), float(z)),
+                size=float(max(w, h, d)),  # Use max dimension for cube size
+                color=(0, 255, 0),
+                rotation=(0.0, 0.0, float(yaw))
+            ))
+            
+            # Add text label
+            effects.append(Text3DAdd(
+                text=f"{class_name} {confidence:.2f}",
+                position=(float(x), float(y) + float(h)/2 + 0.1, float(z)),
+                size=0.05,
+                color=(255, 255, 0)
+            ))
         
-        return results
+        return effects
 
 
 class PointCloudObjectDetectionEffect(EffectProducer):
     """Effect producer using Learning3D for classification"""
     
     def __init__(self):
-        self.classifier = PointCloudClassifier()
+        self.classifier = Learning3dDetector()
     
     def apply(self, pointcloud: o3d.geometry.PointCloud) -> List[Effect]:
         effects = []
