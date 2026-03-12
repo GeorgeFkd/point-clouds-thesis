@@ -15,6 +15,7 @@ from effects import (
     Text3DAdd,
     SideEffect,
 )
+import subprocess
 from models import Learning3dDetector
 import pyrealsense2 as rs
 import numpy as np
@@ -24,10 +25,12 @@ from pathlib import Path
 from datetime import datetime
 import os
 import open3d as o3d
-from camera import RealsenseCamera
+from camera import RealsenseCamera,FakeCamera
 
+use_realsense_camera = RealsenseCamera.check_if_present()
 display_session_type = os.getenv("XDG_SESSION_TYPE")
-enable_pointclouds_rendering = display_session_type != "wayland"
+enable_pointclouds_rendering =  display_session_type != "wayland"
+
 # if display_session_type == "wayland":
 #     print("Wayland session is currently not supported")
 #     print("Use sudo startx and try to run again")
@@ -219,36 +222,6 @@ class Processor2D:
         assert False
 
 
-class Processor3D:
-    @classmethod
-    def create_pointcloud_pyvista(cls, depth, color, depth_scale, intrinsics):
-        assert False
-        """Create PyVista point cloud from depth + color"""
-        H, W = depth.shape
-
-        # Pixel coordinates
-        u, v = np.meshgrid(np.arange(W), np.arange(H))
-
-        # Convert depth to meters and back-project to 3D
-        z = depth * depth_scale
-        x = (u - intrinsics.ppx) * z / intrinsics.fx
-        y = (v - intrinsics.ppy) * z / intrinsics.fy
-
-        # Flatten
-        points = np.stack([x.flatten(), y.flatten(), z.flatten()], axis=-1)
-        colors = color.reshape(-1, 3)
-
-        # Filter valid points (depth > 0)
-        valid = points[:, 2] > 0
-        points_valid = points[valid]
-        colors_valid = colors[valid]
-
-        # Create PyVista PolyData
-        cloud = pv.PolyData(points_valid)
-        cloud["RGB"] = colors_valid
-
-        return cloud
-
 
 class EventBus:
     def __init__(self):
@@ -275,7 +248,7 @@ class EventBus:
 
 class Application:
     def __init__(self):
-        self.camera = RealsenseCamera()
+        self.camera = RealsenseCamera() if use_realsense_camera else FakeCamera("./example-faces.ply")
         self.detector = ObjectDetector(["face"])
         self.data_exporter = DataExporter()
         self.effects_mgr = EffectsManager()
@@ -335,6 +308,7 @@ class Application:
         detections = self.detector.detect(depth, color, ["face"])
 
         preview = color.copy()
+        print(f"Detections to display: {detections}")
         for text_label, x1, x2, y1, y2 in detections:
             cv2.rectangle(preview, (x1, y1), (x2, y2), (0, 255, 0), 2)
             cv2.putText(
@@ -426,7 +400,7 @@ class Application:
 
     def export_blurred(self, *args):
         print("\n" + "=" * 60)
-        print("EXPORTING POINT CLOUD WITH BLURRED FACES")
+        print("exporting pointcloud with blurred objects")
         print("=" * 60)
         depth = args[0]
         color = args[1]
@@ -434,9 +408,9 @@ class Application:
         if len(detections) > 0:
             print(f"Blurring {len(detections)} detected objects in 2D image...")
             color_blurred = color
-            for _, x1, x2, y1, y2 in detections:
+            for label, x1, x2, y1, y2 in detections:
+                print(f"Blurring {label} in point cloud.")
                 color_blurred = Processor2D.gaussian_blur(color_blurred, x1, x2, y1, y2)
-            print("        ✓Objects blurred successfully")
         else:
             print("No specified objects detected - using original image")
             color_blurred = color
@@ -446,32 +420,33 @@ class Application:
             depth,
             color_blurred,
         )
-        # print(f"Point cloud created ({cloud.n_points} points)")
-
-        ply_filename = f"blurred.ply"
-        print(f"Saving to PLY file")
+        filename = "blurred"
+        ply_filename = f"{filename}.ply"
         ply_path = self.data_exporter.save_ply(cloud, ply_filename, len(detections))
-        print(f"PLY saved at {ply_path}")
+        print(f"Blurred 3D: {ply_path}")
 
-        print("Saving blurred image")
-        blurred_filename = f"blurred_2d.jpg"
+        blurred_filename = f"{filename}.jpg"
         self.data_exporter.save_jpeg(color_blurred, blurred_filename)
-        print(f"        ✓ Blurred 2D: {blurred_filename}")
+        print(f"Blurred 2D: {blurred_filename}")
 
-        print("\n📦 EXPORT COMPLETE!")
-        print(f"   PLY file: {ply_filename}")
+        pcd_filename = f"{filename}.pcd"
+        pcd_path = self.data_exporter.output_dir / pcd_filename
+        subprocess.run(["pcl_ply2pcd", str(ply_path), str(pcd_path)], check=True)
+        # Launch viewer, the OS might say that this process has hanged, just kill the pcl_viewer window
+        print(f"Launching PCL viewer...")
+        subprocess.run(["pcl_viewer", str(pcd_path)])
+
+        print("EXPORT COMPLETE!")
         print(f"   Points: {len(cloud.points)}")
         print(f"   Objects blurred: {len(detections)}")
-        print(f"   ⚠️  IMPORTANT: Objects are BLURRED in the point cloud!")
         print("=" * 60 + "\n")
-
-        print("Calling export blurred")
         pass
 
     def quit(self):
         self.should_continue = False
         self.camera.stop()
-        self.o3dvis.destroy_window()
+        if enable_pointclouds_rendering:
+            self.o3dvis.destroy_window()
 
     def interactive_mode(self):
         """Interactive mode with live preview and export"""
@@ -504,49 +479,6 @@ class Application:
 
         finally:
             print("Should clear up resources")
-            # cv2.destroyAllWindows()
-
-    def visualise_pointclouds(self):
-        """Browse PLY files from the output directory, press Enter to cycle through them"""
-        import subprocess
-        import tempfile
-
-        ply_files = sorted(self.data_exporter.output_dir.glob("*.ply"))
-        if not ply_files:
-            print(f"No PLY files found in {self.data_exporter.output_dir}")
-            return
-
-        print("\n=== Point Cloud Viewer ===")
-        print("Press Enter to cycle through PLY files, Ctrl+C to quit")
-        print(
-            f"\nFound {len(ply_files)} PLY file(s) in {self.data_exporter.output_dir}"
-        )
-
-        for i, ply_path in enumerate(ply_files):
-            print(f"\n[{i + 1}/{len(ply_files)}] {ply_path.name}")
-            input("Press Enter to view...")
-
-            with tempfile.NamedTemporaryFile(suffix=".pcd", delete=False) as tmp:
-                pcd_path = tmp.name
-
-            viewer_proc = None
-            try:
-                subprocess.run(["pcl_ply2pcd", str(ply_path), pcd_path], check=True)
-                viewer_proc = subprocess.Popen(["pcl_viewer", pcd_path])
-                input("Press Enter to close and continue...")
-                viewer_proc.terminate()
-                viewer_proc.wait()
-            except FileNotFoundError as e:
-                print(f"Error: {e}")
-                print(
-                    "Make sure pcl_ply2pcd and pcl_viewer are installed and on PATH,other wise compile Point Cloud Library from source and install the executables in the path"
-                )
-                return
-            finally:
-                if viewer_proc and viewer_proc.poll() is None:
-                    viewer_proc.terminate()
-                    viewer_proc.wait()
-                Path(pcd_path).unlink(missing_ok=True)
 
     def stop(self):
         # should stop the camera.pipeline.stop()
@@ -555,7 +487,6 @@ class Application:
 
 MODES = {
     "interactive": lambda app: app.interactive_mode(),
-    "visualise": lambda app: app.visualise_pointclouds(),
     "test_effects": lambda app: app.test_effects(),
     "test_classification": lambda app: app.test_classification()
 }
