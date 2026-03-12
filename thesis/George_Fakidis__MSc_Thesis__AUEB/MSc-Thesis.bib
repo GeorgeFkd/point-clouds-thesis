@@ -1,4 +1,160 @@
- @misc{Lidar_2026,
+ @article{Zhao_Zhang_Demiris_2024,
+	title = {3PFS: Protecting Pedestrian Privacy Through Face Swapping},
+	volume = {25},
+	ISSN = {1558-0016},
+	DOI = {10.1109/TITS.2024.3421917},
+	abstractNote = {In the era of artificial intelligence, privacy has
+	                become a paramount concern, especially within intelligent
+	                transportation systems (ITS) where pedestrians are
+	                frequently captured by vehicle-mounted cameras for deep
+	                learning model training. To address this, we introduce
+	                3PFS, a novel method designed to protect pedestrian
+	                privacy via face swapping while preserving the utility of
+	                processed images. Our method consists of a pedestrian
+	                detector, a face detector, a pre-processing module, a
+	                source face selection algorithm, and a face swapping
+	                algorithm. After detecting pedestrians and their
+	                corresponding faces, the pre-processing module enhances
+	                image quality. Our unique source face selection algorithm
+	                then chooses an appropriate face from our source face
+	                library, which is subsequently swapped with the target
+	                face using a face swapping algorithm. Notably, with the
+	                combination of a pedestrian tracking algorithm, our 3PFS
+	                is well-suited for video anonymization. Additionally, we
+	                propose a comprehensive evaluation strategy to evaluate
+	                the performance of pedestrian anonymization methods. We
+	                validate the effectiveness of 3PFS through extensive
+	                experiments on a dataset we created based on the publicly
+	                available JAAD dataset and on videos captured using our
+	                robotic wheelchair.},
+	number = {11},
+	journal = {IEEE Transactions on Intelligent Transportation Systems},
+	author = {Zhao, Zixian and Zhang, Xingchen and Demiris, Yiannis},
+	year = {2024},
+	month = nov,
+	pages = {16845–16854},
+}
+
+@article{Belbachir_Ortiz_Aalerud_Belbachir_2025,
+	title = {Advancing Point Cloud Perception: A Focus on People Detection},
+	volume = {6},
+	ISSN = {2661-8907},
+	DOI = {10.1007/s42979-025-04221-9},
+	abstractNote = {Abstract Point-cloud data have become pivotal for
+	                three-dimensional scene analysis, yet robust real-time
+	                detection of humans remains challenging due to data
+	                sparsity, irregular sampling, and occlusions. In this
+	                study, we present a feature-engineered pipeline that uses
+	                a Random Forest Classifier (RFC) for efficient people
+	                detection in high-resolution LiDAR point clouds. Our
+	                contributions include: (1) detailed parameterization of a
+	                ground-removal algorithm using region growing; a compact
+	                feature set of 15 geometric and intensity-based
+	                descriptors; (3) comprehensive evaluation metrics on two
+	                datasets; and (4) comparative analysis against MLP and
+	                PointNet baselines. Experiments demonstrate that our RFC
+	                achieves good results. These results validate the
+	                practical applicability of our approach for real-time,
+	                on-device human detection in point-cloud environments.},
+	number = {6},
+	journal = {SN Computer Science},
+	author = {Belbachir, Assia and Ortiz, Antonio M. and Aalerud, Atle and
+	          Belbachir, Ahmed Nabil},
+	year = {2025},
+	month = july,
+	pages = {698},
+	language = {en},
+}
+ 
+@inproceedings{Ohno_Ukyo_Amano_Rizk_Yamaguchi_2023,
+	title = {Privacy-preserving Pedestrian Tracking using Distributed 3D
+	         LiDARs},
+	ISSN = {2474-249X},
+	url = {https://ieeexplore.ieee.org/abstract/document/10099061},
+	DOI = {10.1109/PERCOM56429.2023.10099061},
+	abstractNote = {The growing demand for intelligent environments
+	                unleashes an extraordinary cycle of privacy-aware
+	                applications that makes individuals’ life more
+	                comfortable and safe. Examples of these applications
+	                include pedestrian tracking systems in large areas.
+	                Although the ubiquity of camera-based systems, they are
+	                not a preferable solution due to the vulnerability of
+	                leaking the privacy of pedestrians. In this paper, we
+	                introduce a novel privacy-preserving system for
+	                pedestrian tracking in smart environments using multiple
+	                distributed LiDARs of non-overlapping views. The system
+	                is designed to leverage LiDAR devices to track
+	                pedestrians in partially covered areas due to practical
+	                constraints, e.g., occlusion or cost. Therefore, the
+	                system uses the point cloud captured by different LiDARs
+	                to extract discriminative features that are used to train
+	                a metric learning model for pedestrian matching purposes.
+	                To boost the system’s robustness, we leverage a
+	                probabilistic approach to model and adapt the dynamic
+	                mobility patterns of individuals and thus connect their
+	                sub-trajectories. We deployed the system in a large-scale
+	                testbed with 70 colorless LiDARs and conducted three
+	                different experiments. The evaluation result at the
+	                entrance hall confirms the system’s ability to accurately
+	                track the pedestrians with a 0.98 F-measure even with
+	                zero-covered areas. This result highlights the promise of
+	                the proposed system as the next generation of
+	                privacy-preserving tracking means in smart environments.},
+	note = {ISSN: 2474-249X},
+	booktitle = {2023 IEEE International Conference on Pervasive Computing
+	             and Communications (PerCom)},
+	author = {Ohno, Masakazu and Ukyo, Riki and Amano, Tatsuya and Rizk,
+	          Hamada and Yamaguchi, Hirozumi},
+	year = {2023},
+	month = mar,
+	pages = {43–52},
+}
+ 
+
+@article{Martín-Martín_Patel_Rezatofighi_Shenoi_Gwak_Frankel_Sadeghian_Savarese_2023,
+	title = {JRDB: A Dataset and Benchmark of Egocentric Robot Visual
+	         Perception of Humans in Built Environments},
+	volume = {45},
+	ISSN = {1939-3539},
+	DOI = {10.1109/TPAMI.2021.3070543},
+	abstractNote = {We present JRDB, a novel egocentric dataset collected
+	                from our social mobile manipulator JackRabbot. The
+	                dataset includes 64 minutes of annotated multimodal
+	                sensor data including stereo cylindrical 360^circ ∘ RGB
+	                video at 15 fps, 3D point clouds from two 16 planar rays
+	                Velodyne LiDARs, line 3D point clouds from two Sick
+	                Lidars, audio signal, RGB-D video at 30 fps, 360^circ ∘
+	                spherical image from a fisheye camera and encoder values
+	                from the robot’s wheels. Our dataset incorporates data
+	                from traditionally underrepresented scenes such as indoor
+	                environments and pedestrian areas, all from the
+	                ego-perspective of the robot, both stationary and
+	                navigating. The dataset has been annotated with over 2.4
+	                million bounding boxes spread over five individual
+	                cameras and 1.8 million associated 3D cuboids around all
+	                people in the scenes totaling over 3500 time consistent
+	                trajectories. Together with our dataset and the
+	                annotations, we launch a benchmark and metrics for 2D and
+	                3D person detection and tracking. With this dataset,
+	                which we plan on extending with further types of
+	                annotation in the future, we hope to provide a new source
+	                of data and a test-bench for research in the areas of
+	                egocentric robot vision, autonomous navigation, and all
+	                perceptual tasks around social robotics in human
+	                environments.},
+	number = {6},
+	journal = {IEEE Transactions on Pattern Analysis and Machine
+	           Intelligence},
+	author = {Martín-Martín, Roberto and Patel, Mihir and Rezatofighi, Hamid
+	          and Shenoi, Abhijeet and Gwak, JunYoung and Frankel, Eric and
+	          Sadeghian, Amir and Savarese, Silvio},
+	year = {2023},
+	month = june,
+	pages = {6748–6765},
+}
+ 
+
+@misc{Lidar_2026,
 	rights = {Creative Commons Attribution-ShareAlike License},
 	url = {https://en.wikipedia.org/w/index.php?title=Lidar&oldid=1337706693
 	       },

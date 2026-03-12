@@ -22,7 +22,6 @@ The most popular file formats for point clouds are .PLY which is a polygon file 
 
 \par Face detection is a specific case of object detection that is useful in different scenarios. Not to be confused with face recognition, which is about comparing a face scan against the scans from a face recognition database \cite{soltanpour_survey_2017}. In that domain there is more focus about extracting facial features and trying to discern different faces. In this work we only explore object and face detection and not face recognition.
 
-\par Privacy is about X(probs from wikipedia, does not need a formal reference).
 \par Point clouds produced by LiDAR cameras are around 100k points per frame, a number changing based on the technical specification of the camera. In some cases point clouds are converted into a three-dimensional grid comprised of cubes that each contains a certain number of points.
 These cubes are also known as \emph{voxels} in the literature and are primarily used for reducing the computational cost of operations on \ac{PC}s and grouping neighboring points.
 
@@ -54,41 +53,51 @@ In this work the authors introduce PointNet, a neural network architecture that 
 
 \par The work in \cite{shi_point-gnn_2020} brings the graph neural network(GNN) architecture into point clouds. It constructs a graph of the point cloud by adding edges between neighboring points in a fixed radius. For the detection it uses a \ac{MLP} for classification and a \ac{MLP} that computes a bounding box for each class.
 
-\par the work in \cite{pan_3d_2021} introduces PointFormer an architecture that does those things.
+\par the work in \cite{pan_3d_2021} introduces PointFormer, a Transformer based backbone for learning features from point clouds. To capture local, global and the interplay between local and global information the authors create a local Transformer(LT) module, a global Transformer (GT) module and a local-global transformer (LGT). The LT module learns features in small regions, the GT module learns context-aware representations at the captured point cloud level while the LGT aggregates local features into the context used by the global transformer.
 
-\par The work in \cite{yin_center-based_2021} introduces CenterPoint, an architecture based on the X,Y,Z concepts.
-\par Another work that uses the Voxel-based approach is \cite{deng_voxel_2021} where the authors utilize the R-CNN architecture for learning tasks on point clouds.
 
 \label{sec:related:sec12}
 
 \subsection{Person/Face detection in point clouds}
-It is basically about taking existing models and training them on more
-specific datasets and changing slightly the architecture to accomodate the specific use case.
-In \cite{jia_person-minkunet_2021} the authors focus on identifying people for LiDAR point clouds.
+Face detection as a specific task is not that popular in the point cloud space. Face recognition has been covered in more existing work as point clouds offer richer information than the conventional 2D images.
+In contrast, people detection has been a topic of interest in a lot more work, as it is massively more represented in datasets and important for self-driving related tasks.
+In \cite{jia_person-minkunet_2021} the authors present a single stage 3D person detection network that uses a submanifold sparse convolution as an attempt to evaluate its effectiveness in this domain.
+In \cite{Belbachir_Ortiz_Aalerud_Belbachir_2025} the authors implement people detection by using a Random Forest Classifier(RFC) based on hand-crafted features such as voxel-based curvature histograms and local surface curvature variations. The point clouds are first pre-processed by removing the ground points and thus keeping points richer in information.
+As we will see in the datasets section most datasets include the category \emph{pedestrian} which is a less invasive process in contrast to faces.
 
 
 \subsection{Datasets for point clouds object detection}
-Some information regarding the general form of the datasets. For face detection extra processes are required to get
+For face detection extra processes are required to get
 access to the datasets. Datasets containing faces are mostly for tasks such as face recognition, pose estimation and other tasks that require more tuning than conventional object detection. They differ significantly from object detection datasets as they already have cropped and aligned the faces in the data without leaving the rest of the background intact.
-
 Most datasets for object detection in point clouds are for scenarios involving self-driving vehicles and are captured by LiDAR devices. They have pedestrians as a category but not faces.
 
-In \cite{geiger_vision_2013} they present the kitti dataset.
-In \cite{yu_bdd100k_2020}the dataset contains...
-In \cite{mao_one_2021} they present the once dataset
-In \cite{wilson_argoverse_2023} they present the dataset ArgoV2 where...
+Several large-scale datasets have been proposed for this domain.
+The work at \cite{geiger_vision_2013} created KITTI, one of the earliest benchmarks for LiDAR-based 3D object detection, annotating classes such as car, pedestrian, and cyclist.
+In \cite{mao_one_2021} the authors present ONCE, a dataset with 1 million LiDAR scenes and annotations for 5 classes.
+The Argoverse 2 dataset is introduced in \cite{wilson_argoverse_2023}, notable for its broad 26-category taxonomy,
+that extends beyond common driving objects to include rare classes such as strollers, wheelchairs, and animals.
 
+The JRDB dataset introduced in \cite{Martín-Martín_Patel_Rezatofighi_Shenoi_Gwak_Frankel_Sadeghian_Savarese_2023} contains around an hour of sensor data in an uncontrolled environment, including data from LIDAR channels and an RGBD camera, produced from a mobile robot. The dataset was then annotated with 3D bounded boxes by human labelers for pedestrians.
 
-% \Blindtext[1][1]
 
 \section{Related Work}
-\cite{ullah_real-time_2022}
+In \cite{ullah_real-time_2022} the authors implement a real-time system for human face detection and recognition.
+This case involves CCTV images in contrast to our application that is based on point clouds. The face detection module is based on existing 2D based methods, more specifically a cascading classifier.
+In this work we also utilize a cascading classifer as an alternative mechanism for face detection for when point cloud based methods cannot be reasonably applied.
+In the work at \cite{yang_development_2018} the authors use face detection in a method for faster transmission of 3D point cloud data.
+They do so by  nose tip detection(enabled by the face detection module) to find a stable anchor to use for transmitting smaller P-frames.
+The authors in \cite{Ohno_Ukyo_Amano_Rizk_Yamaguchi_2023} use colorless point clouds instead of conventional cameras to preserve privacy while doing pedestrian trajectory tracking.
+Their choice of hardware and configuration is what allows them to create a private testbed.
+The authors of \cite{Zhao_Zhang_Demiris_2024} have created an end to end pipeline for protecting pedestrian privacy in 2D videos.
+They achieve this by swapping the detected faces with dissimilar but relevant faces from an existing face library combining multiple AI models in order to have a consistent and smooth anonymized video as a result.
+In this work we attempt to work with point clouds as our data where an analogous process is not directly applicable.
+
+
 Commercial software found at: \url{https://www.riegl.com}
 and at \url{https://www.celantur.com/}.
 
 \label{sec:related:sec2}
 
-% \Blindtext[1][1]
 
 \begin{figure}[htb]
 	\includegraphics[width=\textwidth]{figs/hitratio.pdf}
@@ -96,7 +105,6 @@ and at \url{https://www.celantur.com/}.
 	\label{fig:related:2}
 \end{figure}
 
-% \Blindtext[1][1]
 
 %\section{Conclusion}
 %\label{sec:related:conclusion}
