@@ -14,6 +14,11 @@ from effects import (
     PointCloudObjectDetectionEffect,
     Text3DAdd,
     SideEffect,
+    Text2DAdd,
+    Rect2DAdd,
+    FnCall,
+    Detection2DEffect,
+    BlurDetections2DEffect,
 )
 import subprocess
 from models import Learning3dDetector
@@ -25,110 +30,11 @@ from pathlib import Path
 from datetime import datetime
 import os
 import open3d as o3d
-from camera import RealsenseCamera,FakeCamera
+from camera import RealsenseCamera, FakeCamera
 
 use_realsense_camera = RealsenseCamera.check_if_present()
 display_session_type = os.getenv("XDG_SESSION_TYPE")
-enable_pointclouds_rendering =  display_session_type != "wayland"
-
-# if display_session_type == "wayland":
-#     print("Wayland session is currently not supported")
-#     print("Use sudo startx and try to run again")
-#     exit(1)
-# elif display_session_type == "x11":
-#     print("x11 session is supported(open3d point cloud rendering)")
-# else:
-#     print("unrecognised session type")
-
-
-
-class ObjectDetector:
-    def __init__(self, objects_to_detect):
-        assert "face" in objects_to_detect
-        if "face" in objects_to_detect:
-            self.face_cascade = cv2.CascadeClassifier(
-                cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-            )
-        self.class_names = {
-            0: "background",
-            1: "aeroplane",
-            2: "bicycle",
-            3: "bird",
-            4: "boat",
-            5: "bottle",
-            6: "bus",
-            7: "car",
-            8: "cat",
-            9: "chair",
-            10: "cow",
-            11: "diningtable",
-            12: "dog",
-            13: "horse",
-            14: "motorbike",
-            15: "person",
-            16: "pottedplant",
-            17: "sheep",
-            18: "sofa",
-            19: "train",
-            20: "tvmonitor",
-        }
-        self.net = cv2.dnn.readNetFromCaffe(
-            "MobileNetSSD_deploy.prototxt", "MobileNetSSD_deploy.caffemodel"
-        )
-
-    def convert_detections(self, detection):
-        pass
-
-    def detect(self, depth, color, objects):
-        results = []
-        if "face" in objects:
-            text_label = "Face"
-            gray = cv2.cvtColor(color, cv2.COLOR_RGB2GRAY)
-            faces = self.face_cascade.detectMultiScale(
-                gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30)
-            )
-            for x, y, w, h in faces:
-                margin = int(w * 0.2)
-                x1 = max(0, x - margin)
-                y1 = max(0, y - margin)
-                x2 = min(color.shape[1], x + w + margin)
-                y2 = min(color.shape[0], y + h + margin)
-                results.append((text_label, x1, x2, y1, y2))
-
-        frame_resized = cv2.resize(color, (300, 300))
-        blob = cv2.dnn.blobFromImage(
-            frame_resized, 0.007843, (300, 300), (127.5, 127.5, 127.5), False
-        )
-        self.net.setInput(blob)
-        detections = self.net.forward()
-        cols = frame_resized.shape[1]
-        rows = frame_resized.shape[0]
-        for i in range(detections.shape[2]):
-            confidence = detections[0, 0, i, 2]  # Confidence of prediction
-            if confidence > 0.65:  # Filter prediction
-                class_id = int(detections[0, 0, i, 1])  # Class label
-
-                # Object location
-                x1 = int(detections[0, 0, i, 3] * cols)
-                y1 = int(detections[0, 0, i, 4] * rows)
-                x2 = int(detections[0, 0, i, 5] * cols)
-                y2 = int(detections[0, 0, i, 6] * rows)
-
-                # Factor for scale to original size of frame
-                heightFactor = color.shape[0] / 300.0
-                widthFactor = color.shape[1] / 300.0
-                # Scale object detection to frame
-                x1 = int(widthFactor * x1)
-                y1 = int(heightFactor * y1)
-                x2 = int(widthFactor * x2)
-                y2 = int(heightFactor * y2)
-                if class_id in self.class_names:
-                    label = self.class_names[class_id] + ": " + str(confidence)
-                    print(label)
-                    results.append((label, x1, x2, y1, y2))
-                    print(label)  # print class and confidence
-        return results
-
+enable_pointclouds_rendering = display_session_type != "wayland"
 
 class DataExporter:
     def __init__(self, output_dir="output"):
@@ -146,6 +52,7 @@ class DataExporter:
         self, cloud: o3d.geometry.PointCloud, filename: str, faces_count=0, binary=False
     ):
         """Save point cloud to PLY file with proper RGB colors"""
+        print("Saving PLY")
         filepath = self.output_dir / filename
 
         points = cloud.points
@@ -219,9 +126,6 @@ class Processor2D:
             img[y1:y2, x1:x2] = region_blurred
             return img
 
-        assert False
-
-
 
 class EventBus:
     def __init__(self):
@@ -248,33 +152,36 @@ class EventBus:
 
 class Application:
     def __init__(self):
-        self.camera = RealsenseCamera() if use_realsense_camera else FakeCamera("./example-faces.ply")
-        self.detector = ObjectDetector(["face"])
+        self.camera = (
+            RealsenseCamera()
+            if use_realsense_camera
+            else FakeCamera("./example-faces.ply")
+        )
         self.data_exporter = DataExporter()
         self.effects_mgr = EffectsManager()
         self.bus = EventBus()
         intr = self.camera.get_intrinsics()
 
         self.pinhole_camera_intrinsic = o3d.camera.PinholeCameraIntrinsic(
-                intr.width, intr.height, intr.fx, intr.fy, intr.ppx, intr.ppy
-            )
+            intr.width, intr.height, intr.fx, intr.fy, intr.ppx, intr.ppy
+        )
         if enable_pointclouds_rendering:
             self.o3dvis = o3d.visualization.Visualizer()
             self.o3dvis.create_window(
                 window_name="PC Visualiser", width=640, height=480
             )
             self.o3dvis.get_render_option().point_size = 2
-            
+
             self.init_3d_viewer()
-    
 
     def test_classification(self):
         print("Testing classification")
         pointcloud = o3d.io.read_point_cloud("example-faces.ply")
         self.effects_mgr.add_effect_producer(PointCloudObjectDetectionEffect())
-        effects = self.effects_mgr.create_effects(pointcloud)
-        self.print_effects(effects)
-    def print_effects(self,effects):
+        effects = self.effects_mgr.create_effects([], [], pointcloud)
+        self.apply_effects(effects, [], [], [])
+
+    def apply_effects(self, effects, depth, color, pointcloud: o3d.geometry.PointCloud):
         for effect in effects:
             if isinstance(effect, ColorChange):
                 x, y, w, h = effect.bbox
@@ -288,61 +195,100 @@ class Application:
                 print(
                     f"CubeAdd: center={effect.center}, size={effect.size}, color={effect.color}, rotation={effect.rotation}"
                 )
+            elif isinstance(effect, Rect2DAdd):
+                cv2.rectangle(color, effect.p1, effect.p2, (0, 255, 0), 2)
+            elif isinstance(effect, Text2DAdd):
+                cv2.putText(
+                    color,
+                    effect.text,
+                    effect.position,
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    (0, 255, 0),
+                    2,
+                )
             elif isinstance(effect, SideEffect):
-                print(f"SideEffect: (does nothing)")
-    def test_effects(self):
-        print("testing effects")
-        self.effects_mgr.add_effect_producer(FaceAnnotator())
-        pointcloud = o3d.io.read_point_cloud(
-            "../output_blurred/blurred_faces_20260218_165613_binary.ply"
-        )
-        effects = self.effects_mgr.create_effects(pointcloud)
-        self.print_effects(effects)
-        print(f"{len(effects)} effects created.")
-        self.data_exporter.save_ply(pointcloud, "testing_effects.ply")
-        self.quit()
+                effect.callback(depth, color, pointcloud)
 
-    def display_with_detections(self, *args):
+    def render_2d(self, depth, color, pointcloud):
+        color = cv2.cvtColor(color, cv2.COLOR_RGB2BGR)
+        cv2.imshow("Face Detection - Press B to Export", color)
+
+    def render_3d(self, depth, color, pointcloud):
+        if not enable_pointclouds_rendering:
+            filename = "rendered"
+            ply_filename = f"{filename}.ply"
+            ply_path = self.data_exporter.save_ply(pointcloud, ply_filename)
+            pcd_filename = f"{filename}.pcd"
+            pcd_path = self.data_exporter.output_dir / pcd_filename
+            subprocess.run(["pcl_ply2pcd", str(ply_path), str(pcd_path)], check=True)
+            # Launch viewer, the OS might say that this process has hanged, just kill the pcl_viewer window
+            print(f"Launching PCL viewer...")
+            subprocess.run(["pcl_viewer", str(pcd_path)])
+        else:
+            self.pcd.points = pointcloud.points
+            self.pcd.colors = pointcloud.colors
+
+            if self.first_frame:
+                self.o3dvis.reset_view_point(True)
+                self.first_frame = False
+
+            self.o3dvis.update_geometry(self.pcd)
+            self.o3dvis.poll_events()
+            self.o3dvis.update_renderer()
+
+    def collect_changes_to_pointcloud(self, depth, color, pointcloud):
+        pcd_new = self.convert_frame_to_o3d_pointcloud(depth, color)
+        pointcloud.points = pcd_new.points
+        pointcloud.colors = pcd_new.colors
+
+    def interactive_mode(self):
+        self.effects_mgr.add_effect_producers(
+            [
+                FnCall(self.render_2d),
+                BlurDetections2DEffect(),
+                FnCall(self.collect_changes_to_pointcloud),
+                FnCall(self.render_3d),
+                FnCall(
+                    lambda d, c, p: self.data_exporter.save_ply(
+                        p, "testing_effects.ply"
+                    )
+                ),
+            ]
+        )
+        print("\n=== Face Detection 2D → Blurred Point Cloud Export ===")
+        print("Controls:")
+        print("  Q - Quit")
+        print()
+
+        self.bus.on_key("q", lambda *data: self.quit())
+        self.bus.on_frame(self.execute_effects)
+        self.should_continue = True
+        try:
+            while self.should_continue:
+                success, depth, color = self.camera.read_frame()
+                if not success:
+                    continue
+                self.bus.new_frame(depth, color)
+                key = cv2.waitKey(1) & 0xFF
+                self.bus.key_pressed(chr(key), depth, color)
+        finally:
+            print("should gather resources")
+
+    def execute_effects(self, *args):
         depth = args[0]
         color = args[1]
-        detections = self.detector.detect(depth, color, ["face"])
-
-        preview = color.copy()
-        print(f"Detections to display: {detections}")
-        for text_label, x1, x2, y1, y2 in detections:
-            cv2.rectangle(preview, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.putText(
-                preview,
-                text_label,
-                (x1, y1 - 5),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.5,
-                (0, 255, 0),
-                2,
-            )
-            cv2.putText(
-                preview,
-                "Press B to export BLURRED point cloud",
-                (10, 60),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.7,
-                (0, 255, 255),
-                2,
-            )
-
-        # Display
-        preview_bgr = cv2.cvtColor(preview, cv2.COLOR_RGB2BGR)
-        cv2.imshow("Face Detection - Press B to Export", preview_bgr)
+        pointcloud = self.convert_frame_to_o3d_pointcloud(depth, color)
+        effects = self.effects_mgr.create_effects(depth, color, pointcloud)
+        print(f"{len(effects)} effects created.")
+        self.apply_effects(effects, depth, color, pointcloud)
 
     def init_3d_viewer(self):
         """Initialize the 3D point cloud viewer"""
-        # Create empty point cloud
         self.pcd = o3d.geometry.PointCloud()
         self.pcd.points = o3d.utility.Vector3dVector([[0, 0, 1]])
         self.pcd.colors = o3d.utility.Vector3dVector([[0, 0, 0]])
-        # Add to visualizer
         self.o3dvis.add_geometry(self.pcd)
-        # Setup view control
         view_control = self.o3dvis.get_view_control()
         view_control.set_zoom(0.8)
         view_control.set_front([0, 0, -1])
@@ -351,9 +297,8 @@ class Application:
 
         # Track first frame for reset
         self.first_frame = True
-    
 
-    def convert_frame_to_o3d_pointcloud(self,depth,color)->o3d.geometry.PointCloud:
+    def convert_frame_to_o3d_pointcloud(self, depth, color) -> o3d.geometry.PointCloud:
         o3d_depth = o3d.geometry.Image(depth)
         o3d_color = o3d.geometry.Image(color)
 
@@ -374,111 +319,11 @@ class Application:
             rgbd, self.pinhole_camera_intrinsic
         )
         return pcd_new
-        
-    def display_pointcloud(self, *args):
-        depth = args[0]
-        color = args[1]
-        pcd_new = self.convert_frame_to_o3d_pointcloud(depth,color)
-
-        # for some reason it needs to be rotated bcs the PC gets displayed upside-down
-        pcd_new.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
-
-        print(f"Points created: {len(pcd_new.points)}")
-        # don't create new one
-        self.pcd.points = pcd_new.points
-        self.pcd.colors = pcd_new.colors
-
-        # Reset view on first frame
-        if self.first_frame:
-            self.o3dvis.reset_view_point(True)
-            self.first_frame = False
-
-        # should include poll_events to render
-        self.o3dvis.update_geometry(self.pcd)
-        self.o3dvis.poll_events()
-        self.o3dvis.update_renderer()
-
-    def export_blurred(self, *args):
-        print("\n" + "=" * 60)
-        print("exporting pointcloud with blurred objects")
-        print("=" * 60)
-        depth = args[0]
-        color = args[1]
-        detections = self.detector.detect(depth, color, ["face"])
-        if len(detections) > 0:
-            print(f"Blurring {len(detections)} detected objects in 2D image...")
-            color_blurred = color
-            for label, x1, x2, y1, y2 in detections:
-                print(f"Blurring {label} in point cloud.")
-                color_blurred = Processor2D.gaussian_blur(color_blurred, x1, x2, y1, y2)
-        else:
-            print("No specified objects detected - using original image")
-            color_blurred = color
-
-        print("Creating 3D point cloud with blurred colors...")
-        cloud = self.convert_frame_to_o3d_pointcloud(
-            depth,
-            color_blurred,
-        )
-        filename = "blurred"
-        ply_filename = f"{filename}.ply"
-        ply_path = self.data_exporter.save_ply(cloud, ply_filename, len(detections))
-        print(f"Blurred 3D: {ply_path}")
-
-        blurred_filename = f"{filename}.jpg"
-        self.data_exporter.save_jpeg(color_blurred, blurred_filename)
-        print(f"Blurred 2D: {blurred_filename}")
-
-        pcd_filename = f"{filename}.pcd"
-        pcd_path = self.data_exporter.output_dir / pcd_filename
-        subprocess.run(["pcl_ply2pcd", str(ply_path), str(pcd_path)], check=True)
-        # Launch viewer, the OS might say that this process has hanged, just kill the pcl_viewer window
-        print(f"Launching PCL viewer...")
-        subprocess.run(["pcl_viewer", str(pcd_path)])
-
-        print("EXPORT COMPLETE!")
-        print(f"   Points: {len(cloud.points)}")
-        print(f"   Objects blurred: {len(detections)}")
-        print("=" * 60 + "\n")
-        pass
-
     def quit(self):
         self.should_continue = False
         self.camera.stop()
         if enable_pointclouds_rendering:
             self.o3dvis.destroy_window()
-
-    def interactive_mode(self):
-        """Interactive mode with live preview and export"""
-        print("\n=== Face Detection 2D → Blurred Point Cloud Export ===")
-        print("Controls:")
-        print("  B - Export point cloud with BLURRED FACES (ASCII PLY)")
-        print("  M - Export with BLURRED FACES (Binary PLY - smaller file)")
-        print("  X - Export with blurred faces + random rect (ASCII)")
-        print("  N - Export without blur (original)")
-        print("  V - View current frame as 3D (no export)")
-        print("  R - New random rectangle")
-        print("  Q - Quit")
-        print()
-
-        self.bus.on_key("b", lambda *data: print(f"Hello from event bus, {len(data)}"))
-        self.bus.on_key("b", self.export_blurred)
-        self.bus.on_key("q", lambda *data: self.quit())
-        self.bus.on_frame(self.display_with_detections)
-        if enable_pointclouds_rendering:
-            self.bus.on_frame(self.display_pointcloud)
-        self.should_continue = True
-        try:
-            while self.should_continue:
-                success,depth, color = self.camera.read_frame()
-                if not success:
-                    continue
-                self.bus.new_frame(depth, color)
-                key = cv2.waitKey(1) & 0xFF
-                self.bus.key_pressed(chr(key), depth, color)
-
-        finally:
-            print("Should clear up resources")
 
     def stop(self):
         # should stop the camera.pipeline.stop()
@@ -487,22 +332,23 @@ class Application:
 
 MODES = {
     "interactive": lambda app: app.interactive_mode(),
-    "test_effects": lambda app: app.test_effects(),
-    "test_classification": lambda app: app.test_classification()
+    "test_classification": lambda app: app.test_classification(),
 }
 
 
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="Point Cloud Application",exit_on_error=False)
+    parser = argparse.ArgumentParser(
+        description="Point Cloud Application", exit_on_error=False
+    )
     parser.add_argument(
         "--app",
         choices=MODES.keys(),
         default="interactive",
         help="Application mode to run (default: interactive)",
     )
-    args,unknown = parser.parse_known_args()
+    args, unknown = parser.parse_known_args()
 
     app = Application()
 
