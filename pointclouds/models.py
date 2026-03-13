@@ -114,55 +114,6 @@ class ObjectDetector2D:
         return results
 
 
-# class IMVoxelNetDetector(PointCloudClassifier):
-#     """3D Object Detection using IMVoxelNet from MMDetection3D"""
-#
-#     def __init__(self):
-#
-#         # Hardcoded config and checkpoint paths
-#         config_file = '/home/georgefkd/programming/mmdetection3d/configs/imvoxelnet/imvoxelnet_2xb4_sunrgbd-3d-10class.py'
-#         checkpoint_file = './imvoxelnet_4x2_sunrgbd-3d-10class_20220809_184416-29ca7d2e.pth'
-#
-#         # Determine device
-#         if torch.cuda.is_available():
-#             device = 'cuda:0'
-#         else:
-#             device = 'cpu'
-#
-#         # Initialize model
-#         self.model = init_model(config_file, checkpoint_file, device=device)
-#
-#         print(f"✓ IMVoxelNet initialized on {device}")
-#
-#     def classify(self, pointcloud: o3d.geometry.PointCloud):
-#         """
-#         Detect objects in point cloud
-#
-#         Returns:
-#             MMDetection3D result object (raw format)
-#         """
-#         # Convert Open3D to MMDetection3D format
-#         points = np.asarray(pointcloud.points)
-#
-#         if len(points) == 0:
-#             return None
-#
-#         # Add intensity channel (use ones if no color)
-#         if not pointcloud.has_colors():
-#             intensity = np.ones((len(points), 1))
-#         else:
-#             colors = np.asarray(pointcloud.colors)
-#             intensity = np.mean(colors, axis=1, keepdims=True)
-#
-#         points_with_intensity = np.hstack([points, intensity]).astype(np.float32)
-#
-#         # Create input dict
-#         data = {'points': points_with_intensity}
-#
-#         # Run inference - returns MMDetection3D result
-#         result = inference_detector(self.model, data)
-#
-#         return result
 
 
 class PointPillarsDetector:
@@ -173,17 +124,6 @@ class PointPillarsDetector:
 
         # KITTI class names
         self.class_names = ["Car", "Pedestrian", "Cyclist"]
-
-        # Load PointPillars model
-        # Check Open3D-ML for actual config path
-        # try:
-        #     # Option 1: Load from config
-        #     cfg_file = "path/to/pointpillars_kitti.yml"  # Need to find actual path
-        #     cfg = ml3d.utils.Config.load_from_file(cfg_file)
-        #     self.model = ml3d.models.PointPillars(**cfg.model)
-        #
-        # except:
-        # Option 2: Create with default parameters
         config_path = "./pointpillars.yml"
         cfg = open3d.ml.utils.Config.load_from_file(config_path)
         self.model = ml3d.models.PointPillars(**cfg.model)

@@ -141,163 +141,102 @@ class EventBus:
 
 
 class Application:
-    # def __init__(self):
-    #     self.camera = (
-    #         RealsenseCamera()
-    #         if use_realsense_camera
-    #         else FakeCamera("./example-faces.ply")
-    #     )
-    #     self.data_exporter = DataExporter()
-    #     self.effects_mgr = EffectsManager()
-    #     self.bus = EventBus()
-    #     intr = self.camera.get_intrinsics()
-    #     self.pinhole_camera_intrinsic = o3d.camera.PinholeCameraIntrinsic(
-    #         intr.width, intr.height, intr.fx, intr.fy, intr.ppx, intr.ppy
-    #     )
-    #
-    #     self.pointpillars_detector = PointPillarsDetector()
-    #
-    #     if enable_pointclouds_rendering:
-    #         self.o3dvis = o3d.visualization.Visualizer()
-    #         self.o3dvis.create_window(
-    #             window_name="PC Visualiser", width=640, height=480
-    #         )
-    #         self.o3dvis.get_render_option().point_size = 2
-    #         self.init_3d_viewer()
-    #
-    #     if enable_semantic_segmentation:
-    #         print("Loading semantic segmentation models...")
-    #
-    #         # Get checkpoint paths
-    #         ckpt_path_r, ckpt_path_k = self.get_torch_ckpts()
-    #
-    #         # Load RandLANet
-    #         print("  Loading RandLANet...")
-    #         model_r = ml3d.models.RandLANet(ckpt_path=ckpt_path_r)
-    #         self.pipeline_randlanet = ml3d.pipelines.SemanticSegmentation(model_r)
-    #         self.pipeline_randlanet.load_ckpt(model_r.cfg.ckpt_path)
-    #
-    #         # Load KPFCNN
-    #         print("  Loading KPFCNN...")
-    #         model_k = ml3d.models.KPFCNN(ckpt_path=ckpt_path_k)
-    #         self.pipeline_kpfcnn = ml3d.pipelines.SemanticSegmentation(model_k)
-    #         self.pipeline_kpfcnn.load_ckpt(model_k.cfg.ckpt_path)
-    #
-    #         # Setup ML3D visualizer
-    #         kitti_labels = ml3d.datasets.SemanticKITTI.get_label_to_names()
-    #         self.label_names = kitti_labels
-    #
-    #         self.ml3d_vis = ml3d.vis.Visualizer()
-    #         lut = ml3d.vis.LabelLUT()
-    #         for val in sorted(kitti_labels.keys()):
-    #             lut.add_label(kitti_labels[val], val)
-    #         self.ml3d_vis.set_lut("labels", lut)
-    #         self.ml3d_vis.set_lut("pred", lut)
-    #
-    #         print("✓ Semantic segmentation models loaded")
-    #
-    # def get_torch_ckpts(self):
-    #     """Download and return checkpoint paths"""
-    #     kpconv_url = "https://storage.googleapis.com/open3d-releases/model-zoo/kpconv_semantickitti_202009090354utc.pth"
-    #     randlanet_url = "https://storage.googleapis.com/open3d-releases/model-zoo/randlanet_semantickitti_202201071330utc.pth"
-    #
-    #     weights_dir = "./weights"
-    #     os.makedirs(weights_dir, exist_ok=True)
-    #
-    #     ckpt_path_r = os.path.join(weights_dir, "vis_weights_RandLANet.pth")
-    #     if not os.path.exists(ckpt_path_r):
-    #         print(f"  Downloading RandLANet weights...")
-    #         os.system(f"wget {randlanet_url} -O {ckpt_path_r}")
-    #
-    #     ckpt_path_k = os.path.join(weights_dir, "vis_weights_KPFCNN.pth")
-    #     if not os.path.exists(ckpt_path_k):
-    #         print(f"  Downloading KPFCNN weights...")
-    #         os.system(f"wget {kpconv_url} -O {ckpt_path_k}")
-    #
-    #     return ckpt_path_r, ckpt_path_k
-    #
-    # def run_semantic_segmentation(
-    #     self, pointcloud: o3d.geometry.PointCloud, model="kpfcnn"
-    # ):
-    #     """Run semantic segmentation on point cloud"""
-    #     points = np.asarray(pointcloud.points).astype(np.float32)
-    #
-    #     # Prepare data for ML3D
-    #     data = {
-    #         "point": points,
-    #         "feat": None,
-    #         "label": np.zeros(len(points), dtype=np.int32),
-    #     }
-    #
-    #     # Run inference
-    #     if model == "randlanet":
-    #         results = self.pipeline_randlanet.run_inference(data)
-    #     else:  # kpfcnn
-    #         results = self.pipeline_kpfcnn.run_inference(data)
-    #
-    #     pred_labels = (results["predict_labels"] + 1).astype(np.int32)
-    #     pred_labels[0] = 0  # Fill "unlabeled" value
-    #
-    #     return pred_labels
-    #
-    # def visualize_semantic_segmentation(self, pointcloud: o3d.geometry.PointCloud):
-    #     """Visualize semantic segmentation results"""
-    #     points = np.asarray(pointcloud.points).astype(np.float32)
-    #
-    #     # Prepare data
-    #     data = {
-    #         "point": points,
-    #         "feat": None,
-    #         "label": np.zeros(len(points), dtype=np.int32),
-    #     }
-    #
-    #     # Run both models
-    #     print("Running semantic segmentation...")
-    #     results_r = self.pipeline_randlanet.run_inference(data)
-    #     pred_label_r = (results_r["predict_labels"] + 1).astype(np.int32)
-    #     pred_label_r[0] = 0
-    #
-    #     results_k = self.pipeline_kpfcnn.run_inference(data)
-    #     pred_label_k = (results_k["predict_labels"] + 1).astype(np.int32)
-    #     pred_label_k[0] = 0
-    #
-    #     # Prepare visualization data
-    #     vis_points = []
-    #
-    #     # Original with KPFCNN prediction
-    #     vis_points.append(
-    #         {
-    #             "name": "camera_frame",
-    #             "points": points,
-    #             "labels": data["label"],
-    #             "pred": pred_label_k,
-    #         }
-    #     )
-    #
-    #     # RandLANet prediction
-    #     vis_points.append(
-    #         {
-    #             "name": "randlanet",
-    #             "points": points,
-    #             "labels": pred_label_r,
-    #         }
-    #     )
-    #
-    #     # KPFCNN prediction
-    #     vis_points.append(
-    #         {
-    #             "name": "kpfcnn",
-    #             "points": points,
-    #             "labels": pred_label_k,
-    #         }
-    #     )
-    #
-    #     # Visualize
-    #     print(f"Opening ML3D visualizer for {len(vis_points)}")
-    #     try:
-    #         self.ml3d_vis.visualize(vis_points)
-    #     except Exception as e:
-    #         print("Error is:", e)
+
+    def get_torch_ckpts(self):
+        """Download and return checkpoint paths"""
+        kpconv_url = "https://storage.googleapis.com/open3d-releases/model-zoo/kpconv_semantickitti_202009090354utc.pth"
+        randlanet_url = "https://storage.googleapis.com/open3d-releases/model-zoo/randlanet_semantickitti_202201071330utc.pth"
+
+        weights_dir = "./weights"
+        os.makedirs(weights_dir, exist_ok=True)
+
+        ckpt_path_r = os.path.join(weights_dir, "vis_weights_RandLANet.pth")
+        if not os.path.exists(ckpt_path_r):
+            print(f"  Downloading RandLANet weights...")
+            os.system(f"wget {randlanet_url} -O {ckpt_path_r}")
+
+        ckpt_path_k = os.path.join(weights_dir, "vis_weights_KPFCNN.pth")
+        if not os.path.exists(ckpt_path_k):
+            print(f"  Downloading KPFCNN weights...")
+            os.system(f"wget {kpconv_url} -O {ckpt_path_k}")
+
+        return ckpt_path_r, ckpt_path_k
+
+    def run_semantic_segmentation(
+        self, pointcloud: o3d.geometry.PointCloud, model="kpfcnn"
+    ):
+        """Run semantic segmentation on point cloud"""
+        points = np.asarray(pointcloud.points).astype(np.float32)
+
+        # Prepare data for ML3D
+        data = {
+            "point": points,
+            "feat": None,
+            "label": np.zeros(len(points), dtype=np.int32),
+        }
+
+        # Run inference
+        if model == "randlanet":
+            results = self.pipeline_randlanet.run_inference(data)
+        else:  # kpfcnn
+            results = self.pipeline_kpfcnn.run_inference(data)
+
+        pred_labels = (results["predict_labels"] + 1).astype(np.int32)
+        pred_labels[0] = 0  # Fill "unlabeled" value
+
+        return pred_labels
+
+    def visualize_semantic_segmentation(self, pointcloud: o3d.geometry.PointCloud):
+        """Visualize semantic segmentation results"""
+        points = np.asarray(pointcloud.points).astype(np.float32)
+
+        data = {
+            "point": points,
+            "feat": None,
+            "label": np.zeros(len(points), dtype=np.int32),
+        }
+
+        print("Running semantic segmentation...")
+        results_r = self.pipeline_randlanet.run_inference(data)
+        pred_label_r = (results_r["predict_labels"] + 1).astype(np.int32)
+        pred_label_r[0] = 0
+
+        results_k = self.pipeline_kpfcnn.run_inference(data)
+        pred_label_k = (results_k["predict_labels"] + 1).astype(np.int32)
+        pred_label_k[0] = 0
+
+        vis_points = []
+
+        vis_points.append(
+            {
+                "name": "camera_frame",
+                "points": points,
+                "labels": data["label"],
+                "pred": pred_label_k,
+            }
+        )
+
+        vis_points.append(
+            {
+                "name": "randlanet",
+                "points": points,
+                "labels": pred_label_r,
+            }
+        )
+
+        vis_points.append(
+            {
+                "name": "kpfcnn",
+                "points": points,
+                "labels": pred_label_k,
+            }
+        )
+
+        print(f"Opening ML3D visualizer for {len(vis_points)}")
+        try:
+            self.ml3d_vis.visualize(vis_points)
+        except Exception as e:
+            print("Error is:", e)
 
     def __init__(self):
         self.camera = (
@@ -305,6 +244,7 @@ class Application:
             if use_realsense_camera
             else FakeCamera("./example-faces.ply")
         )
+        self.pointpillars_detector = PointPillarsDetector()
         self.data_exporter = DataExporter()
         self.effects_mgr = EffectsManager()
         self.bus = EventBus()
@@ -323,11 +263,41 @@ class Application:
 
             self.init_3d_viewer()
 
+        if enable_semantic_segmentation:
+            print("Loading semantic segmentation models...")
+
+            # Get checkpoint paths
+            ckpt_path_r, ckpt_path_k = self.get_torch_ckpts()
+
+            # Load RandLANet
+            print("  Loading RandLANet...")
+            model_r = ml3d.models.RandLANet(ckpt_path=ckpt_path_r)
+            self.pipeline_randlanet = ml3d.pipelines.SemanticSegmentation(model_r)
+            self.pipeline_randlanet.load_ckpt(model_r.cfg.ckpt_path)
+
+            # Load KPFCNN
+            print("  Loading KPFCNN...")
+            model_k = ml3d.models.KPFCNN(ckpt_path=ckpt_path_k)
+            self.pipeline_kpfcnn = ml3d.pipelines.SemanticSegmentation(model_k)
+            self.pipeline_kpfcnn.load_ckpt(model_k.cfg.ckpt_path)
+
+            # Setup ML3D visualizer
+            kitti_labels = ml3d.datasets.SemanticKITTI.get_label_to_names()
+            self.label_names = kitti_labels
+
+            self.ml3d_vis = ml3d.vis.Visualizer()
+            lut = ml3d.vis.LabelLUT()
+            for val in sorted(kitti_labels.keys()):
+                lut.add_label(kitti_labels[val], val)
+            self.ml3d_vis.set_lut("labels", lut)
+            self.ml3d_vis.set_lut("pred", lut)
+
+            print("✓ Semantic segmentation models loaded")
+
     def visualize_detections_3d(self, pointcloud, results):
         """Visualize 3D bounding boxes on point cloud"""
     
         print(f"Results are: {results}")
-        assert False
         # Extract results
         boxes = results.get("predict_bboxes", np.array([]))
         scores = results.get("predict_scores", np.array([]))
@@ -375,7 +345,7 @@ class Application:
             geometries, window_name="PointPillars 3D Detection"
         )
 
-    def test_object_detection(self):
+    def test_detection_3d(self):
         while True:
             success, depth, color = self.camera.read_frame()
 
@@ -392,7 +362,7 @@ class Application:
             self.visualize_detections_3d(pointcloud, results)
         pass
 
-    def test_classification(self):
+    def test_semantic_segmentation(self):
         """Test semantic segmentation on a captured frame"""
         if display_session_type == "wayland":
             print("Might not work correctly under wayland")
@@ -489,7 +459,7 @@ class Application:
         self.effects_mgr.add_effect_producers(
             [
                 # FnCall(self.render_2d),
-                # BlurDetections2DEffect(),
+                BlurDetections2DEffect(),
                 Detections3DEffect(),
                 FnCall(self.collect_changes_to_pointcloud),
                 FnCall(self.render_3d),
@@ -576,8 +546,8 @@ class Application:
 
 MODES = {
     "interactive": lambda app: app.interactive_mode(),
-    "test_classification": lambda app: app.test_classification(),
-    "test_detection_3d": lambda app: app.test_object_detection(),
+    "test_segmentation": lambda app: app.test_semantic_segmentation(),
+    "test_detection_3d": lambda app: app.test_detection_3d(),
 }
 
 
@@ -595,6 +565,10 @@ def main():
     )
     args, unknown = parser.parse_known_args()
 
+    if args.app == "test_segmentation":
+        print("enabling semantic segmentation flag")
+        global enable_semantic_segmentation
+        enable_semantic_segmentation = True
     app = Application()
 
     try:
