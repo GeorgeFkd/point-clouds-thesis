@@ -26,6 +26,13 @@ class Text3DAdd:
     size: float
     color: Tuple[int, int, int]  # (r, g, b)
 
+@dataclass
+class Box3DAdd:
+    """3D bounding box for object detection"""
+    center: Tuple[float, float, float]  # (x, y, z)
+    extent: Tuple[float, float, float]  # (width, height, depth)
+    yaw: float                          # Rotation around Z-axis in radians
+
 
 @dataclass
 class CubeAdd:
@@ -56,7 +63,7 @@ class Rect2DAdd:
     p2: Tuple[int, int]
 
 
-Effect = Union[ColorChange, Text3DAdd, CubeAdd, SideEffect, Text2DAdd, Rect2DAdd]
+Effect = Union[ColorChange, Text3DAdd, CubeAdd, SideEffect, Text2DAdd, Rect2DAdd,Box3DAdd]
 
 
 class EffectProducer(metaclass=ABCMeta):
@@ -77,7 +84,28 @@ class Processor2D:
             region_blurred = cv2.GaussianBlur(region, (blur_amount, blur_amount), 0)
             img[y1:y2, x1:x2] = region_blurred
             return img
+        return img
 
+
+class Detections3DEffect(EffectProducer):
+    def apply(self,depth,color,pointcloud:o3d.geometry.PointCloud=None) -> List[Effect]:
+        effects = []
+        effect1 = Box3DAdd(
+        center=(0.5, 0.0, 1.0),
+        extent=(0.3, 0.3, 0.5),
+        yaw=0.0
+        )
+
+        effect2 = Box3DAdd(
+            center=(-0.5, 0.3, 1.0),
+            extent=(0.4, 0.4, 0.6),
+            yaw=0.785  # 45 degrees
+        )
+
+        effects.append(effect1)
+        effects.append(effect2)
+
+        return effects
 
 class BlurDetections2DEffect(EffectProducer):
     """Blur detected objects in color image"""
@@ -118,7 +146,6 @@ class Detection2DEffect(EffectProducer):
         effects = []
 
         detections = self.detector.detect(depth, color, self.target_classes)
-        print(f"Detections to display: {detections}")
 
         for text_label, x1, x2, y1, y2 in detections:
             effects.append(Rect2DAdd(p1=(x1, y1), p2=(x2, y2)))

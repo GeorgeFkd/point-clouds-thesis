@@ -4,22 +4,8 @@ Face Detection 2D → Point Cloud 3D with PLY Export (PyVista)
 IMPORTANT: Exports point clouds with BLURRED FACES for privacy
 """
 
-from effects import (
-    EffectsManager,
-    FaceAnnotator,
-    Effect,
-    ColorChange,
-    CubeAdd,
-    MMDet3DObjectDetectionEffect,
-    PointCloudObjectDetectionEffect,
-    Text3DAdd,
-    SideEffect,
-    Text2DAdd,
-    Rect2DAdd,
-    FnCall,
-    Detection2DEffect,
-    BlurDetections2DEffect,
-)
+from effects import *
+    
 import subprocess
 from models import Learning3dDetector
 import pyrealsense2 as rs
@@ -30,11 +16,15 @@ from pathlib import Path
 from datetime import datetime
 import os
 import open3d as o3d
+import open3d.ml.torch as ml3d
 from camera import RealsenseCamera, FakeCamera
+from models import PointPillarsDetector
 
 use_realsense_camera = RealsenseCamera.check_if_present()
 display_session_type = os.getenv("XDG_SESSION_TYPE")
 enable_pointclouds_rendering = display_session_type != "wayland"
+enable_semantic_segmentation = False
+
 
 class DataExporter:
     def __init__(self, output_dir="output"):
@@ -151,6 +141,164 @@ class EventBus:
 
 
 class Application:
+    # def __init__(self):
+    #     self.camera = (
+    #         RealsenseCamera()
+    #         if use_realsense_camera
+    #         else FakeCamera("./example-faces.ply")
+    #     )
+    #     self.data_exporter = DataExporter()
+    #     self.effects_mgr = EffectsManager()
+    #     self.bus = EventBus()
+    #     intr = self.camera.get_intrinsics()
+    #     self.pinhole_camera_intrinsic = o3d.camera.PinholeCameraIntrinsic(
+    #         intr.width, intr.height, intr.fx, intr.fy, intr.ppx, intr.ppy
+    #     )
+    #
+    #     self.pointpillars_detector = PointPillarsDetector()
+    #
+    #     if enable_pointclouds_rendering:
+    #         self.o3dvis = o3d.visualization.Visualizer()
+    #         self.o3dvis.create_window(
+    #             window_name="PC Visualiser", width=640, height=480
+    #         )
+    #         self.o3dvis.get_render_option().point_size = 2
+    #         self.init_3d_viewer()
+    #
+    #     if enable_semantic_segmentation:
+    #         print("Loading semantic segmentation models...")
+    #
+    #         # Get checkpoint paths
+    #         ckpt_path_r, ckpt_path_k = self.get_torch_ckpts()
+    #
+    #         # Load RandLANet
+    #         print("  Loading RandLANet...")
+    #         model_r = ml3d.models.RandLANet(ckpt_path=ckpt_path_r)
+    #         self.pipeline_randlanet = ml3d.pipelines.SemanticSegmentation(model_r)
+    #         self.pipeline_randlanet.load_ckpt(model_r.cfg.ckpt_path)
+    #
+    #         # Load KPFCNN
+    #         print("  Loading KPFCNN...")
+    #         model_k = ml3d.models.KPFCNN(ckpt_path=ckpt_path_k)
+    #         self.pipeline_kpfcnn = ml3d.pipelines.SemanticSegmentation(model_k)
+    #         self.pipeline_kpfcnn.load_ckpt(model_k.cfg.ckpt_path)
+    #
+    #         # Setup ML3D visualizer
+    #         kitti_labels = ml3d.datasets.SemanticKITTI.get_label_to_names()
+    #         self.label_names = kitti_labels
+    #
+    #         self.ml3d_vis = ml3d.vis.Visualizer()
+    #         lut = ml3d.vis.LabelLUT()
+    #         for val in sorted(kitti_labels.keys()):
+    #             lut.add_label(kitti_labels[val], val)
+    #         self.ml3d_vis.set_lut("labels", lut)
+    #         self.ml3d_vis.set_lut("pred", lut)
+    #
+    #         print("✓ Semantic segmentation models loaded")
+    #
+    # def get_torch_ckpts(self):
+    #     """Download and return checkpoint paths"""
+    #     kpconv_url = "https://storage.googleapis.com/open3d-releases/model-zoo/kpconv_semantickitti_202009090354utc.pth"
+    #     randlanet_url = "https://storage.googleapis.com/open3d-releases/model-zoo/randlanet_semantickitti_202201071330utc.pth"
+    #
+    #     weights_dir = "./weights"
+    #     os.makedirs(weights_dir, exist_ok=True)
+    #
+    #     ckpt_path_r = os.path.join(weights_dir, "vis_weights_RandLANet.pth")
+    #     if not os.path.exists(ckpt_path_r):
+    #         print(f"  Downloading RandLANet weights...")
+    #         os.system(f"wget {randlanet_url} -O {ckpt_path_r}")
+    #
+    #     ckpt_path_k = os.path.join(weights_dir, "vis_weights_KPFCNN.pth")
+    #     if not os.path.exists(ckpt_path_k):
+    #         print(f"  Downloading KPFCNN weights...")
+    #         os.system(f"wget {kpconv_url} -O {ckpt_path_k}")
+    #
+    #     return ckpt_path_r, ckpt_path_k
+    #
+    # def run_semantic_segmentation(
+    #     self, pointcloud: o3d.geometry.PointCloud, model="kpfcnn"
+    # ):
+    #     """Run semantic segmentation on point cloud"""
+    #     points = np.asarray(pointcloud.points).astype(np.float32)
+    #
+    #     # Prepare data for ML3D
+    #     data = {
+    #         "point": points,
+    #         "feat": None,
+    #         "label": np.zeros(len(points), dtype=np.int32),
+    #     }
+    #
+    #     # Run inference
+    #     if model == "randlanet":
+    #         results = self.pipeline_randlanet.run_inference(data)
+    #     else:  # kpfcnn
+    #         results = self.pipeline_kpfcnn.run_inference(data)
+    #
+    #     pred_labels = (results["predict_labels"] + 1).astype(np.int32)
+    #     pred_labels[0] = 0  # Fill "unlabeled" value
+    #
+    #     return pred_labels
+    #
+    # def visualize_semantic_segmentation(self, pointcloud: o3d.geometry.PointCloud):
+    #     """Visualize semantic segmentation results"""
+    #     points = np.asarray(pointcloud.points).astype(np.float32)
+    #
+    #     # Prepare data
+    #     data = {
+    #         "point": points,
+    #         "feat": None,
+    #         "label": np.zeros(len(points), dtype=np.int32),
+    #     }
+    #
+    #     # Run both models
+    #     print("Running semantic segmentation...")
+    #     results_r = self.pipeline_randlanet.run_inference(data)
+    #     pred_label_r = (results_r["predict_labels"] + 1).astype(np.int32)
+    #     pred_label_r[0] = 0
+    #
+    #     results_k = self.pipeline_kpfcnn.run_inference(data)
+    #     pred_label_k = (results_k["predict_labels"] + 1).astype(np.int32)
+    #     pred_label_k[0] = 0
+    #
+    #     # Prepare visualization data
+    #     vis_points = []
+    #
+    #     # Original with KPFCNN prediction
+    #     vis_points.append(
+    #         {
+    #             "name": "camera_frame",
+    #             "points": points,
+    #             "labels": data["label"],
+    #             "pred": pred_label_k,
+    #         }
+    #     )
+    #
+    #     # RandLANet prediction
+    #     vis_points.append(
+    #         {
+    #             "name": "randlanet",
+    #             "points": points,
+    #             "labels": pred_label_r,
+    #         }
+    #     )
+    #
+    #     # KPFCNN prediction
+    #     vis_points.append(
+    #         {
+    #             "name": "kpfcnn",
+    #             "points": points,
+    #             "labels": pred_label_k,
+    #         }
+    #     )
+    #
+    #     # Visualize
+    #     print(f"Opening ML3D visualizer for {len(vis_points)}")
+    #     try:
+    #         self.ml3d_vis.visualize(vis_points)
+    #     except Exception as e:
+    #         print("Error is:", e)
+
     def __init__(self):
         self.camera = (
             RealsenseCamera()
@@ -166,6 +314,7 @@ class Application:
             intr.width, intr.height, intr.fx, intr.fy, intr.ppx, intr.ppy
         )
         if enable_pointclouds_rendering:
+            self.bboxes = []
             self.o3dvis = o3d.visualization.Visualizer()
             self.o3dvis.create_window(
                 window_name="PC Visualiser", width=640, height=480
@@ -174,12 +323,89 @@ class Application:
 
             self.init_3d_viewer()
 
+    def visualize_detections_3d(self, pointcloud, results):
+        """Visualize 3D bounding boxes on point cloud"""
+    
+        print(f"Results are: {results}")
+        assert False
+        # Extract results
+        boxes = results.get("predict_bboxes", np.array([]))
+        scores = results.get("predict_scores", np.array([]))
+        labels = results.get("predict_labels", np.array([]))
+
+        if len(boxes) == 0:
+            print("No objects detected!")
+            o3d.visualization.draw_geometries([pointcloud])
+            return
+
+        print(f"\nDetected {len(boxes)} objects:")
+
+        geometries = [pointcloud]
+
+        for i in range(len(boxes)):
+            # PointPillars boxes: [x, y, z, w, h, d, yaw]
+            x, y, z, w, h, d, yaw = boxes[i]
+            score = scores[i]
+            label = int(labels[i])
+
+            if score < 0.3:  # Confidence threshold
+                continue
+
+            class_name = f"class_{label}"
+            print(f"  {class_name}: {score:.2f} at ({x:.2f}, {y:.2f}, {z:.2f})")
+
+            # Create 3D bounding box
+            R = o3d.geometry.get_rotation_matrix_from_xyz((0, 0, yaw))
+            bbox = o3d.geometry.OrientedBoundingBox(
+                center=[x, y, z], R=R, extent=[w, h, d]
+            )
+
+            # Color by class
+            colors = {
+                0: (1, 0, 0),  # Car - Red
+                1: (0, 1, 0),  # Pedestrian - Green
+                2: (0, 0, 1),  # Cyclist - Blue
+            }
+            bbox.color = colors.get(label, (1, 1, 1))
+
+            geometries.append(bbox)
+
+        # Visualize
+        o3d.visualization.draw_geometries(
+            geometries, window_name="PointPillars 3D Detection"
+        )
+
+    def test_object_detection(self):
+        while True:
+            success, depth, color = self.camera.read_frame()
+
+            if not success:
+                return
+
+            # Convert to point cloud
+            pointcloud = self.convert_frame_to_o3d_pointcloud(depth, color)
+
+            # Run detection
+            results = self.pointpillars_detector.detect(pointcloud)
+
+            # Visualize
+            self.visualize_detections_3d(pointcloud, results)
+        pass
+
     def test_classification(self):
-        print("Testing classification")
-        pointcloud = o3d.io.read_point_cloud("example-faces.ply")
-        self.effects_mgr.add_effect_producer(PointCloudObjectDetectionEffect())
-        effects = self.effects_mgr.create_effects([], [], pointcloud)
-        self.apply_effects(effects, [], [], [])
+        """Test semantic segmentation on a captured frame"""
+        if display_session_type == "wayland":
+            print("Might not work correctly under wayland")
+        while True:
+            success, depth, color = self.camera.read_frame()
+            if not success:
+                print("Failed to capture frame!")
+                return
+            # Convert to point cloud
+            pointcloud = self.convert_frame_to_o3d_pointcloud(depth, color)
+            # Run and visualize semantic segmentation
+            # self.render_2d(depth,color,pointcloud)
+            self.visualize_semantic_segmentation(pointcloud)
 
     def apply_effects(self, effects, depth, color, pointcloud: o3d.geometry.PointCloud):
         for effect in effects:
@@ -187,6 +413,19 @@ class Application:
                 x, y, w, h = effect.bbox
                 r, g, b = effect.color
                 print(f"ColorChange: bbox=({x}, {y}, {w}, {h}), color=({r}, {g}, {b})")
+            elif isinstance(effect,Box3DAdd):
+                if not enable_pointclouds_rendering:
+                    return
+                R = o3d.geometry.get_rotation_matrix_from_xyz((0, 0, effect.yaw))
+                bbox = o3d.geometry.OrientedBoundingBox(
+                    center=effect.center,
+                    R=R,
+                    extent=effect.extent
+                )
+                # Set color
+                bbox.color = np.asarray([0.5,0.5,0.5],dtype=np.float64)
+                self.bboxes.append(bbox)
+                
             elif isinstance(effect, Text3DAdd):
                 print(
                     f"Text3DAdd: text='{effect.text}', position={effect.position}, size={effect.size}, color={effect.color}"
@@ -222,7 +461,7 @@ class Application:
             pcd_filename = f"{filename}.pcd"
             pcd_path = self.data_exporter.output_dir / pcd_filename
             subprocess.run(["pcl_ply2pcd", str(ply_path), str(pcd_path)], check=True)
-            # Launch viewer, the OS might say that this process has hanged, just kill the pcl_viewer window
+            # Launch viewer, the OS might say that this process has hanged, just kill the pcl_viewer window to continue
             print(f"Launching PCL viewer...")
             subprocess.run(["pcl_viewer", str(pcd_path)])
         else:
@@ -234,8 +473,12 @@ class Application:
                 self.first_frame = False
 
             self.o3dvis.update_geometry(self.pcd)
+            for bbox in self.bboxes:
+                self.o3dvis.add_geometry(bbox,reset_bounding_box=False)
+
             self.o3dvis.poll_events()
             self.o3dvis.update_renderer()
+            self.bboxes = []
 
     def collect_changes_to_pointcloud(self, depth, color, pointcloud):
         pcd_new = self.convert_frame_to_o3d_pointcloud(depth, color)
@@ -245,15 +488,16 @@ class Application:
     def interactive_mode(self):
         self.effects_mgr.add_effect_producers(
             [
-                FnCall(self.render_2d),
-                BlurDetections2DEffect(),
+                # FnCall(self.render_2d),
+                # BlurDetections2DEffect(),
+                Detections3DEffect(),
                 FnCall(self.collect_changes_to_pointcloud),
                 FnCall(self.render_3d),
-                FnCall(
-                    lambda d, c, p: self.data_exporter.save_ply(
-                        p, "testing_effects.ply"
-                    )
-                ),
+                # FnCall(
+                #     lambda d, c, p: self.data_exporter.save_ply(
+                #         p, "testing_effects.ply"
+                #     )
+                # ),
             ]
         )
         print("\n=== Face Detection 2D → Blurred Point Cloud Export ===")
@@ -280,7 +524,6 @@ class Application:
         color = args[1]
         pointcloud = self.convert_frame_to_o3d_pointcloud(depth, color)
         effects = self.effects_mgr.create_effects(depth, color, pointcloud)
-        print(f"{len(effects)} effects created.")
         self.apply_effects(effects, depth, color, pointcloud)
 
     def init_3d_viewer(self):
@@ -319,6 +562,7 @@ class Application:
             rgbd, self.pinhole_camera_intrinsic
         )
         return pcd_new
+
     def quit(self):
         self.should_continue = False
         self.camera.stop()
@@ -333,6 +577,7 @@ class Application:
 MODES = {
     "interactive": lambda app: app.interactive_mode(),
     "test_classification": lambda app: app.test_classification(),
+    "test_detection_3d": lambda app: app.test_object_detection(),
 }
 
 

@@ -6,14 +6,15 @@ readme = "README.md"
 # we need python 3.10 bcs learning3d needs open3d v0.17.0 and that is built for python 3.10
 requires-python = ">=3.10"
 dependencies = [
-    "mmdet3d>=1.4.0",
     "numpy>=1.24.0",
-    "open3d==0.17.0",
+    "open3d==0.19.0",
     "opencv-contrib-python>=4.8.0",
     "opencv-python>=4.8.0",
-    "openmim>=0.3.9",
     "pyrealsense2>=2.56.5.9235",
     "setuptools>=82.0.0",
+    "tensorboard>=2.20.0",
+    "torch==2.2.1",
+    "torchvision",
 ]
 
 
