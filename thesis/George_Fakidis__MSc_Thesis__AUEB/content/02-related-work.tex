@@ -3,31 +3,40 @@
 \chapter{Background and Related Work}
 \label{sec:related}
 
-% \Blindtext[2][1]
 
 \section{Background}
 
 \label{sec:related:sec1}
 
-% \Blindtext[2][1]
 
 \subsection{Background Information and Terminology}
 \par Point clouds are a set of points positioned in three-dimensional space in the form of (x,y,z) coordinates, where z is the depth within the two-dimensional image. Depending on the use case and the capture device points can be associated with other data such as colors and reflectance properties \cite{Point}.
-Point clouds are captured using specialized devices such as LiDAR(Light Detection and Ranging) cameras that project laser pulses and measure return time in order to provide the third dimension of the points \cite{Lidar_2026}.
+Point clouds are captured using specialized devices such as LiDAR(Light Detection and Ranging) cameras that project laser pulses and measure return time in order to provide the third dimension of the points \cite{Lidar_2026}. In this work we are using an Intel Realsense camera seen in \ref{fig:related:2} which is a stereo-depth camera that combines two infrared lenses and an RGB lens in order to provide a colored point cloud.
 There are other technologies for achieving this result but are out of the scope of this work. LiDAR cameras are mostly utilised in cars for achieving self-driving capabilities. Other scenarios are outside of the scope of this work.
-
 The most popular file formats for point clouds are .PLY which is a polygon file format (binary and ascii text variants) and .LAS for LiDAR data. This is where i can mention the intel realsense contribution.
 
 \par Object detection is a domain of computer vision that attempts to classify objects within an image and find their bounds. In the case of 2D object detection it is about providing a rectangle and in \ac{PC}s it is about providing a cube.
 
 \par Face detection is a specific case of object detection that is useful in different scenarios. Not to be confused with face recognition, which is about comparing a face scan against the scans from a face recognition database \cite{soltanpour_survey_2017}. In that domain there is more focus about extracting facial features and trying to discern different faces. In this work we only explore object and face detection and not face recognition.
 
-\par I should also add about semantic segmentation as a term bcs some models do that instead of object detection
+\par Semantic segmentation is a task similar to object detection but differs in the prediction it provides. Instead of predicting boxes that contain objects, it classifies each point in the \ac{PC} as belonging to a specific class. An example from our own experimentation with pretrained models can be seen in \ref{fig:related:3}.
 
 \par Point clouds produced by LiDAR cameras are around 100k points per frame, a number changing based on the technical specification of the camera. In some cases point clouds are converted into a three-dimensional grid comprised of cubes that each contains a certain number of points.
 These cubes are also known as \emph{voxels} in the literature and are primarily used for reducing the computational cost of operations on \ac{PC}s and grouping neighboring points.
 
-\par Add some extra images.
+
+\begin{figure}[htb]
+	\includegraphics[width=\textwidth]{figs/Realsense-Camera.pdf}
+	\caption{Intel Realsense stereo-depth camera, model X}
+	\label{fig:related:2}
+\end{figure}
+
+\begin{figure}[htb]
+	\includegraphics[width=\textwidth]{figs/Semantic-Segmentation-Example.pdf}
+	\caption{Semantic segmentation example on a captured point cloud using pretrained models.}
+	\label{fig:related:3}
+\end{figure}
+
 \label{sec:related:sec11}
 
 % \Blindtext[1][1]
@@ -48,6 +57,8 @@ In this work the authors introduce PointNet, a neural network architecture that 
 \par The authors of PointNet followed up on their work and presented \cite{qi_pointnet_2017-1} where they introduce an enhanced version of PointNet, called PointNet++. In this work they replaced the single max pooling operation of PointNet with a hierarchical mechanism that samples centroids from the point cloud, groups the points in regions defined by the centroids and then extracts local features from the regions. In this way, patterns are captured in multiple scales making features more detailed and robust.
 
 \par In \cite{zhou_voxelnet_2018} the authors take a different approach and instead of raw-point clouds their model, VoxelNet, uses voxels as the data representation, allowing them to take advantage of more points in a point cloud efficiently. More specifically they introduce a voxel feature encoding layer(VFE) layer that summarizes point-wise features in a voxel. Stacking VFE layers achieves a high-dimensional representation, which is then used by a region proposal network(RPN) for object detection.
+
+\par In \cite{Lang_Vora_Caesar_Zhou_Yang_Beijbom_2019} the authors propose PointPillars, an architecture that consumes point clouds as input and outputs 3D bounding boxes for the labels car,pedestrian and cyclist. Instead of doing full voxelization like in \cite{zhou_voxelnet_2018} they cut the point cloud into slices along the z direction, called pillars, which improves performance significantly reaching 16ms for detection. They use a simplified PointNet to generate features which is fed into a 2D convolutional network to produce a high-level representation of the features. Lastly they use a standard Single Shot Detector(SSD) to do the 3D object detection. We attempt to use this model in our experiments as it is the fastest one and we found pretrained weights for it.
 
 \par In \cite{shi_pointrcnn_2019} the authors propose a 2 stage object detection methodology based on R-CNNs and PointNet++ as a backbone network. The first stage generates a small number of 3D bounding boxes and separates points into foreground and background ones. The second stage then refines those proposals using the information produced in the first stage.
 
@@ -73,7 +84,6 @@ For face detection extra processes are required to get
 access to the datasets. Datasets containing faces are mostly for tasks such as face recognition, pose estimation and other tasks that require more tuning than conventional object detection. They differ significantly from object detection datasets as they already have cropped and aligned the faces in the data without leaving the rest of the background intact.
 Most datasets for object detection in point clouds are for scenarios involving self-driving vehicles and are captured by LiDAR devices. They have pedestrians as a category but not faces.
 
-Several large-scale datasets have been proposed for this domain.
 The work at \cite{geiger_vision_2013} created KITTI, one of the earliest benchmarks for LiDAR-based 3D object detection, annotating classes such as car, pedestrian, and cyclist.
 In \cite{mao_one_2021} the authors present ONCE, a dataset with 1 million LiDAR scenes and annotations for 5 classes.
 The Argoverse 2 dataset is introduced in \cite{wilson_argoverse_2023}, notable for its broad 26-category taxonomy,
@@ -81,6 +91,7 @@ that extends beyond common driving objects to include rare classes such as strol
 
 The JRDB dataset introduced in \cite{Martín-Martín_Patel_Rezatofighi_Shenoi_Gwak_Frankel_Sadeghian_Savarese_2023} contains around an hour of sensor data in an uncontrolled environment, including data from LIDAR channels and an RGBD camera, produced from a mobile robot. The dataset was then annotated with 3D bounded boxes by human labelers for pedestrians.
 
+The SUN RGB-D dataset from \cite{Song_Lichtenberg_Xiao_2015} contains 10.335 RGB-D images that are annotated with 2D polygons and 3D bounding boxes for objects, taken with four different rgb-d devices. The rich information of this dataset makes it suitable for a variety of tasks in the general domain of scene understanding.
 
 \section{Related Work}
 In \cite{ullah_real-time_2022} the authors implement a real-time system for human face detection and recognition.
@@ -99,14 +110,5 @@ Commercial software found at: \url{https://www.riegl.com}
 and at \url{https://www.celantur.com/}.
 
 \label{sec:related:sec2}
-
-
-\begin{figure}[htb]
-	\includegraphics[width=\textwidth]{figs/hitratio.pdf}
-	\caption{Caption...}
-	\label{fig:related:2}
-\end{figure}
-
-
 %\section{Conclusion}
 %\label{sec:related:conclusion}

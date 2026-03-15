@@ -2,41 +2,86 @@
 %
 \chapter{System Design and Implementation}
 \label{sec:system}
+
+\section{Work Setting}
+We use an Intel Realsense camera model X. Its technical specs are the following:
+\begin{itemize}
+	\item Resolution:
+	\item Depth Range:
+	\item FPS:
+\end{itemize}
+The setting is at an office, an indoor place, with either not harsh natural light or
+normal overhead office lights.
+What we want to achieve is to cover people and faces that appear in the point cloud
+frame of the camera using a simple blurring effect. There are more advanced techniques
+for anonymization, such as the sophisticated face swapping demonstrated in \cite{Zhao_Zhang_Demiris_2024}
+
 \section{Demonstration}
-Here I will add the images from the software
+\label{sec:system:sec0}
+The software works by first reading the depth and color frame at each iteration of the program.
+Then, different face or people detection modules run using the depth and color frames as data
+returning a label and a box in either 2D or 3D coordinates based on the data it is operating on.
+2D object detection modules can use only the color frame to run their detection.
+Finally the rendering engine applies all the blurring effects based on the detection results and renders
+the resulting pointcloud as it can be seen in \ref{fig:system:2}.
+A trivial semantic segmentation scenario was implemented using the RANDLaNet and KPFCNN models
+provided with pretrained weights from a library we used. The results looks like the figure \ref{fig:system:4}.
+An unsuccessfull 3D object detection was attempted using the PointPillars model from \cite{Lang_Vora_Caesar_Zhou_Yang_Beijbom_2019}.
+
+\begin{figure}[htb]
+	\includegraphics[width=\textwidth]{figs/Pointcloud-Face-Without-Blur.pdf}
+	\caption{Point cloud rendered without blurring faces and people}
+	\label{fig:system:1}
+\end{figure}
+
+\begin{figure}[htb]
+	\includegraphics[width=\textwidth]{figs/Face-Blurred-With-2D-Detection-And-Blur.pdf}
+	\caption{Point cloud rendered with blurred faces(The bounding box demonstrates we can also add 3D detections)}
+	\label{fig:system:2}
+\end{figure}
+
+\begin{figure}[htb]
+	\includegraphics[width=\textwidth]{figs/Semantic-Segmentation-Example.pdf}
+	\caption{Semantic segmentation using RandLaNet and KPFCNN from Open3D library.}
+	\label{fig:system:4}
+\end{figure}
 
 \section{Design}
-Uml diagram here and explanation of the architecture
+\label{sec:system:sec1}
+The design of this system is not too sophisticated as this is a proof of concept prototype.
+Nonetheless some work has been done on the architecture to ensure features can be added seamlessly
+as it can be seen in \ref{fig:system:3}.
+A CameraReader interface was made in order to be able to support cameras from different manufacturers,
+and possibly a camera that its frames are streamed over the network.
+The EffectsManager class is responsible for all of the tools that will operate on the depth, color and
+point cloud data. It ensures that all of the detection tools use as input the same data without mutations.
+In addition, it could allow for running the detections in parallel for better performance and for toggling
+tools on and off based on certain conditions or user input.
 
-
-\label{sec:system:sec0}
-
-
-\begin{itemize}[noitemsep]
-	\item Item 1
-	\item Item 2
-	\item Item 3
-	\item Item 4
-\end{itemize}
-
+\begin{figure}
+	\includegraphics[width=\textwidth]{figs/Uml-Diagram-Thesis-Final.pdf}
+	\caption{UML Class Diagram for system architecture}
+	\label{fig:system:3}
+\end{figure}
 
 \section{Implementation}
-\label{sec:system:sec1}
+\label{sec:system:sec2}
+Python was the language of choice in this project, as most AI related models and libraries
+support python. Another reason was to speed up development, otherwise it would make more
+sense to implement everything in C++ as models are usually implemented in it.
+Several tools were used in order to focus more on the use case and less on the implementation
+details.
+\href{https://github.com/isl-org/Open3D}{\emph{Open3D}} is a library made by the Intelligent Systems Lab organization from Intel for processing and visualizing \ac{PC}s.
+\href{https://github.com/isl-org/Open3D-ML/}{\emph{Open3D-ML}} is an extension to the open3D library that focuses on AI-based tasks such as object detection, semantic segmentation etc. etc.
+Both are properly maintained and were used in this work.
 
-What libraries were used, Language etc. etc.
+\href{https://opencv.org/}{\emph{OpenCV}} is the industry standard when it comes to computer vision in 2D scenarios. We used this library for doing 2D face detection as a fallback because the \ac{PC} based models were too complicated to setup and expensive to fine-tune.
+We also used the DNN module to do general object detection using a MobileNet-SSD implementation.
+We used \href{https://pypi.org/project/pyrealsense2/}{\emph{Pyrealsense2}} from Intel's official SDK for Realsense cameras,for interfacing with the camera X.
 
-\begin{algorithm}
-	\caption{Test}\label{alg:test}
-	\begin{algorithmic}[1]
-		\Procedure{GET}{$a,b$}\Comment{The g.c.d. of a and b}
-		\State $r\gets a\bmod b$
-		\While{$r\not=0$}\Comment{We have the answer if r is 0}
-		\State $a\gets b$
-		\State $b\gets r$
-		\State $r\gets a\bmod b$
-		\EndWhile\label{euclidendwhile}
-		\State \textbf{return} $b$\Comment{The gcd is b}
-		\EndProcedure
-	\end{algorithmic}
-\end{algorithm}
-
+Tools that were not used that could otherwise be useful are the following:
+\begin{itemize}
+	\item \href{https://github.com/open-mmlab/OpenPCDet}{\emph{OpenPCDet}}, it heavily depended on CUDA which was not available in this work.
+	\item \href{https://github.com/open-mmlab/mmdetection3d}{\emph{MMDetection3D}}, supports lots of models we reviewed but had issues when trying to integrating with our work, a great tool nonetheless.
+	\item \href{https://github.com/vinits5/learning3d}{\emph{Learning3D}}, does not support many models, we tried to use it and did not have the desired results.
+\end{itemize}
