@@ -27,7 +27,7 @@ These cubes are also known as \emph{voxels} in the literature and are primarily 
 
 \begin{figure}[htb]
 	\includegraphics[width=\textwidth]{figs/Realsense-Camera.pdf}
-	\caption{Intel Realsense stereo-depth camera, model X}
+	\caption{Intel Realsense stereo-depth camera, model D435I}
 	\label{fig:related:2}
 \end{figure}
 
@@ -71,7 +71,7 @@ In this work the authors introduce PointNet, a neural network architecture that 
 
 \label{sec:related:sec12}
 
-\subsection{Person/Face detection in point clouds}
+\subsection{Person \& Face detection in point clouds}
 Face detection as a specific task is not that popular in the point cloud space. Face recognition has been covered in more existing work as point clouds offer richer information than the conventional 2D images.
 In contrast, people detection has been a topic of interest in a lot more work, as it is massively more represented in datasets and important for self-driving related tasks.
 In \cite{jia_person-minkunet_2021} the authors present a single stage 3D person detection network that uses a submanifold sparse convolution as an attempt to evaluate its effectiveness in this domain.
@@ -84,9 +84,9 @@ For face detection extra processes are required to get
 access to the datasets. Datasets containing faces are mostly for tasks such as face recognition, pose estimation and other tasks that require more tuning than conventional object detection. They differ significantly from object detection datasets as they already have cropped and aligned the faces in the data without leaving the rest of the background intact.
 Most datasets for object detection in point clouds are for scenarios involving self-driving vehicles and are captured by LiDAR devices. They have pedestrians as a category but not faces.
 
-The work at \cite{geiger_vision_2013} created KITTI, one of the earliest benchmarks for LiDAR-based 3D object detection, annotating classes such as car, pedestrian, and cyclist.
-In \cite{mao_one_2021} the authors present ONCE, a dataset with 1 million LiDAR scenes and annotations for 5 classes.
-The Argoverse 2 dataset is introduced in \cite{wilson_argoverse_2023}, notable for its broad 26-category taxonomy,
+The work at \cite{geiger_are_2012} created \href{https://www.cvlibs.net/datasets/kitti/eval_object.php?obj_benchmark=3d}{KITTI}, one of the earliest benchmarks and datasets for LiDAR-based 3D object detection, annotating classes such as car, pedestrian, and cyclist.
+In \cite{mao_one_2021} the authors present ONCE, a dataset with 1 million LiDAR scenes and annotations for 15 classes.
+The \emph{Argoverse 2} dataset is introduced in \cite{wilson_argoverse_2023}, notable for its broad 26-category taxonomy,
 that extends beyond common driving objects to include rare classes such as strollers, wheelchairs, and animals.
 
 The JRDB dataset introduced in \cite{Martín-Martín_Patel_Rezatofighi_Shenoi_Gwak_Frankel_Sadeghian_Savarese_2023} contains around an hour of sensor data in an uncontrolled environment, including data from LIDAR channels and an RGBD camera, produced from a mobile robot. The dataset was then annotated with 3D bounded boxes by human labelers for pedestrians.
@@ -104,11 +104,21 @@ Their choice of hardware and configuration is what allows them to create a priva
 The authors of \cite{Zhao_Zhang_Demiris_2024} have created an end to end pipeline for protecting pedestrian privacy in 2D videos.
 They achieve this by swapping the detected faces with dissimilar but relevant faces from an existing face library combining multiple AI models in order to have a consistent and smooth anonymized video as a result.
 In this work we attempt to work with point clouds as our data where an analogous process is not directly applicable.
+A similar approach to \cite{Zhao_Zhang_Demiris_2024} is explored in \cite{Kunchala_Bouroche_Schoen-Phelan_2023} where the authors go a step further
+when it comes to privacy and replace people with wireframes created using a generative method introduced in \cite{Brkic_Sikiric_Hrkac_Kalafatic_2017} that produces results such as \ref{fig:related:4}.
+They also ensure that within the data the poses of pedestrians are preserved in order to maximize the utility of the privacy-enhanced data.
+
+\begin{figure}[htb]
+	\includegraphics[width=\textwidth]{figs/anonymized-pedestrian-video-data.pdf}
+	\caption{Anonymization of pedestrian videos using generative methods.}
+	\label{fig:related:4}
+\end{figure}
 
 
-Commercial software found at: \url{https://www.riegl.com}
-and at \url{https://www.celantur.com/}.
-
+Commercial software from RIEGL at \url{https://www.riegl.com} where they provide an image anonymizer as part of their product suite.
+Another solution for automated blurring in laser scans can be found at \url{https://www.celantur.com/image-anonymization-terrestrial-laser-scanning/}.
+For the celantur software suite as stated in their \href{https://www.celantur.com/technology/}{technology} section they seem to rely on 2D based CNNs,not using 3D models. This provides bits of evidence that 3D \ac{PC} solutions are not yet adopted by the industry.
 \label{sec:related:sec2}
 %\section{Conclusion}
+%\label{sec:related:conclusion}
 %\label{sec:related:conclusion}

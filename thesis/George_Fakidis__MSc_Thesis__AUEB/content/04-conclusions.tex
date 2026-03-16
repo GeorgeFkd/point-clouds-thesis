@@ -7,8 +7,10 @@
 
 We weren't able to properly implement a \ac{PC} face detection model for the following reasons:
 \begin{itemize}
-	\item Training a 3D based model is expensive computation wise and time wise so we could only use pretrained things
+	\item Training a 3D based model is expensive computation wise and time wise so we could only use pretrained things.
 	\item Face detection is not addressed specifically in tasks so we tried to use the pedestrian category.
+	\item Wherever PyTorch/TensorFlow did not provide all of the foundational blocks required,
+	      only CUDA GPU implementations were provided without a CPU or AMD GPU equivalent.
 \end{itemize}
 
 \par The 3D AI-based Object Detection and general \ac{PC} processing python ecosystem is not that mature yet.
@@ -23,3 +25,32 @@ Anything in 3D Point-Clouds is more complex than the 2D equivalent for many reas
 Being able to efficiently and effectively provide privacy awareness in \ac{PC}s could enable work on traffic settings by reducing the legal process that datasets have to go through, and enable more people-centered applications of \ac{PC} work.
 
 \section{Future Work}
+
+Several research directions occur from the research conducted in this thesis.
+
+\textbf{Evaluation of 2D vs 3D detection models.}
+A systematic comparison between 2D and 3D object detection models for face and people
+detection in both indoor and outdoor settings would provide more insight into the
+trade-offs between the two approaches. Such an evaluation should consider detection
+accuracy, robustness to lighting conditions, occlusion handling, and computational cost.
+
+\textbf{Optimization of 3D detection models for embedded systems.}
+Investigating how to optimize 3D detection models for deployment on embedded
+and low-powered systems, is an important next step. Currently models achieve
+inference times around 30-60 FPS but with special server/desktop hardware
+as noted in \cite{zimmer_survey_2022}.
+
+\textbf{Color-independent model training.}
+Training detection models on colorless point clouds and evaluating whether they
+can match the performance of their color-dependent counterparts would be a valuable
+contribution. Color information in existing datasets can introduce biases tied to
+specific environments or demographics. A model that relies solely on geometric
+features would generalize better across different sensors and scenarios, and would
+be applicable in settings where color data is unavailable or unreliable.
+
+\textbf{End-to-end 3D video anonymization pipelines.}
+Building on work such as \cite{Zhao_Zhang_Demiris_2024}, developing end-to-end
+pipelines for 3D video anonymization would enable privacy-compliant data collection
+at scale. Such pipelines would need to handle temporal and visual consistency across frames,
+real-time performance, and robustness to challenging conditions, representing a
+significant but impactful engineering and research challenge.
