@@ -5,11 +5,30 @@
 
 \chapter*{Abstract}
 \label{sec:abstract}
+Point clouds captured by depth sensors are used in both indoor and outdoor settings.
+This raises privacy concerns that increase the friction between researchers and people
+that might be identifiable in the data collected. This thesis proposes a privacy-aware
+pipeline that detects faces and people in real-time RGB-D data and blurrs them before
+displaying the 3D point cloud. A software proof-of-concept was developed using Python,
+Open3D,OpenCV and Intel's tooling for the depth camera. We also explored the possibility
+of using models that operate directly on 3D point clouds instead of established 2D technologies,
+in order to investigate the software ecosystem's maturity. Our results show that unlike
+2D object detection, the 3D object/face detection ecosystem is not ready for widespread
+adoption and deployment in production without considerable effort.
 
-% \Blindtext[6][1]
+
 
 
 \chapter*{Περίληψη}
 \label{sec:abstract_greek}
-
-% Εδώ γράφουμε μια περίληψη της διπλωματικής μας στα Ελληνικά. Πρέπει να περιλαμβάνει τουλάχιστον το περιεχόμενο του Αγγλικού abstract, αλλά καλό είναι να έχει λίγο μεγαλύτερη έκταση και να δίνει μια πλήρη (αλλά σύντομη!) εικόνα του τι πραγματεύεται η εργασία.
+Τα νέφη σημείων που καταγράφονται από αισθητήρες βάθους χρησιμοποιούνται τόσο σε εσωτερικούς όσο και σε εξωτερικούς χώρους.
+Αυτό σαφώς δημιουργεί ανησυχίες για την ιδιωτικότητα που αυξάνουν την τριβή μεταξύ ερευνητών και ατόμων που ενδέχεται να είναι αναγνωρίσιμα στα δεδομένα που συλλέγονται.
+Αυτή η διπλωματική εργασία προτείνει έναν τρόπο επεξεργασίας λαμβάνοντας υπόψη την ιδιωτικότητα,
+ο οποίος ανιχνεύει πρόσωπα και ανθρώπους σε πραγματικό χρόνο σε δεδομένα RGB-D και τα θολώνει πριν
+από την εμφάνιση του τρισδιάστατου νέφους σημείων. Αναπτύχθηκε ένα λογισμικό ως προτότυπο προκειμένου
+να εξερευνηθεί η ιδέα, χρησιμοποιώντας Python, Open3D, OpenCV και τα εργαλεία της Intel για την κάμερα βάθους.
+Επίσης, εξερευνήσαμε τη δυνατότητα χρήσης μοντέλων που λειτουργούν απευθείας σε τρισδιάστατα νέφη σημείων αντί
+για καθιερωμένες τεχνολογίες που λειτουργούν σε δισδιάστατες εικόνες, προκειμένου να διερευνήσουμε την ωριμότητα
+του οικοσυστήματος λογισμικού.
+Τα αποτελέσματά μας δείχνουν ότι σε αντίθεση με την ανίχνευση αντικειμένων 2D, το οικοσύστημα ανίχνευσης
+αντικειμένων/προσώπων 3D δεν είναι έτοιμο για ευρεία υιοθέτηση και ανάπτυξη σε περιβάλλον παραγωγής χωρίς σημαντική προσπάθεια.
