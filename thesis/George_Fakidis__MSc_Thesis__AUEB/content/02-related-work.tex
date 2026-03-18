@@ -10,16 +10,23 @@
 
 
 \subsection{Background Information and Terminology}
-\par Point clouds are a set of points positioned in three-dimensional space in the form of (x,y,z) coordinates, where z is the depth within the two-dimensional image. Depending on the use case and the capture device points can be associated with other data such as colors and reflectance properties \cite{Point}.
-Point clouds are captured using specialized devices such as LiDAR(Light Detection and Ranging) cameras that project laser pulses and measure return time in order to provide the third dimension of the points \cite{Lidar_2026}. In this work we are using an Intel Realsense camera seen in \ref{fig:related:2} which is a stereo-depth camera that combines two infrared lenses and an RGB lens in order to provide a colored point cloud.
-There are other technologies for achieving this result but are out of the scope of this work. LiDAR cameras are mostly utilised in cars for achieving self-driving capabilities. Other scenarios are outside of the scope of this work.
+\par Point clouds are a set of points positioned in three-dimensional space in the form of (x,y,z) coordinates, where z is the depth within the two-dimensional image.
+Depending on the use case and the capture device points can be associated with other data such as colors and reflectance properties \cite{Point}.
+Point clouds are captured using specialized devices such as LiDAR(Light Detection and Ranging) cameras that project laser pulses and measure return time in order to provide the third dimension of the points \cite{Lidar_2026}.
+In this work we are using an Intel Realsense camera seen in \ref{fig:related:2} which is a stereo-depth camera that combines two infrared lenses and an RGB lens in order to provide a colored point cloud.
+There are other technologies for achieving this result but are out of the scope of this work. LiDAR cameras are mostly utilised in cars for achieving self-driving capabilities.
+Other scenarios are outside of the scope of this work.
 The most popular file formats for point clouds are .PLY which is a polygon file format (binary and ascii text variants) and .LAS for LiDAR data. This is where i can mention the intel realsense contribution.
 
-\par Object detection is a domain of computer vision that attempts to classify objects within an image and find their bounds. In the case of 2D object detection it is about providing a rectangle and in \ac{PC}s it is about providing a cube.
-
-\par Face detection is a specific case of object detection that is useful in different scenarios. Not to be confused with face recognition, which is about comparing a face scan against the scans from a face recognition database \cite{soltanpour_survey_2017}. In that domain there is more focus about extracting facial features and trying to discern different faces. In this work we only explore object and face detection and not face recognition.
-
-\par Semantic segmentation is a task similar to object detection but differs in the prediction it provides. Instead of predicting boxes that contain objects, it classifies each point in the \ac{PC} as belonging to a specific class. An example from our own experimentation with pretrained models can be seen in \ref{fig:related:3}.
+\emph{Object detection} is a domain of computer vision that attempts to classify objects within an image and find their bounds.
+In the case of 2D object detection it is about providing a rectangle and in \ac{PC}s it is about providing a cube.
+\emph{Face detection} is a specific case of object detection that is useful in different scenarios.
+Not to be confused with face recognition, which is about comparing a face scan against the scans from a face recognition database \cite{soltanpour_survey_2017}.
+In that domain there is more focus about extracting facial features and trying to discern different faces.
+In this work we only explore object and face detection and not face recognition.
+\emph{Semantic segmentation} is a task similar to object detection but differs in the prediction it provides.
+Instead of predicting boxes that contain objects, it classifies each point in the \ac{PC} as belonging to a specific class.
+An example from our own experimentation with pretrained models can be seen in \ref{fig:related:3}.
 
 \par Point clouds produced by LiDAR cameras are around 100k points per frame, a number changing based on the technical specification of the camera. In some cases point clouds are converted into a three-dimensional grid comprised of cubes that each contains a certain number of points.
 These cubes are also known as \emph{voxels} in the literature and are primarily used for reducing the computational cost of operations on \ac{PC}s and grouping neighboring points.
@@ -89,9 +96,16 @@ In \cite{mao_one_2021} the authors present ONCE, a dataset with 1 million LiDAR 
 The \emph{Argoverse 2} dataset is introduced in \cite{wilson_argoverse_2023}, notable for its broad 26-category taxonomy,
 that extends beyond common driving objects to include rare classes such as strollers, wheelchairs, and animals.
 
-The JRDB dataset introduced in \cite{Martín-Martín_Patel_Rezatofighi_Shenoi_Gwak_Frankel_Sadeghian_Savarese_2023} contains around an hour of sensor data in an uncontrolled environment, including data from LIDAR channels and an RGBD camera, produced from a mobile robot. The dataset was then annotated with 3D bounded boxes by human labelers for pedestrians.
+The JRDB dataset introduced in \cite{Martín-Martín_Patel_Rezatofighi_Shenoi_Gwak_Frankel_Sadeghian_Savarese_2023} contains around an hour of sensor data in an uncontrolled environment, including data from LIDAR channels and an RGBD camera, produced from a mobile robot.
+The dataset was then annotated with 3D bounded boxes by human labelers for pedestrians.
 
-The SUN RGB-D dataset from \cite{Song_Lichtenberg_Xiao_2015} contains 10.335 RGB-D images that are annotated with 2D polygons and 3D bounding boxes for objects, taken with four different rgb-d devices. The rich information of this dataset makes it suitable for a variety of tasks in the general domain of scene understanding.
+The SUN RGB-D dataset from \cite{Song_Lichtenberg_Xiao_2015} contains 10.335 RGB-D images that are annotated with 2D polygons and 3D bounding boxes for objects, taken with four different rgb-d devices.
+The rich information of this dataset makes it suitable for a variety of tasks in the general domain of scene understanding.
+
+
+\subsection{Privacy preservation in images}
+Important for many reasons e.g. the digital mask paper that says that it helps people submit their facial image for medical purposes.
+Blurring,Pixelation, I know that person paper, face swapping
 
 \section{Related Work}
 In \cite{ullah_real-time_2022} the authors implement a real-time system for human face detection and recognition.

@@ -75,7 +75,7 @@ details.
 \href{https://github.com/isl-org/Open3D}{\emph{Open3D}} is a C++ based library with a python wrapper for convenience made by the Intelligent Systems Lab organization from Intel for processing and visualizing \ac{PC}s. It supports both PyTorch and Tensorflow as the 3D machine learning base tool and supports GPU acceleration for computationally expensive 3D operations.
 \href{https://github.com/isl-org/Open3D-ML/}{\emph{Open3D-ML}} is an extension to the open3D library that focuses on AI-based tasks such as object detection and semantic segmentation.
 Both libraries are properly maintained and were used in this work.
-For 3D object detection only the PointPillars and PointRCNN models are implemented and pretrained in both PyTorch and Tensorflow implementations.
+For 3D object detection only the PointPillars and PointRCNN models are implemented and pretrained on the KITTI dataset in both PyTorch and Tensorflow implementations.
 
 \href{https://opencv.org/}{\emph{OpenCV}} is the industry standard when it comes to computer vision in 2D scenarios. We used this library for doing 2D face detection as a fallback because the \ac{PC} based models were too complicated to setup and expensive to fine-tune. More specifically we used the Haar Cascade Classifier in openCV that is based on early machine learning work at \cite{Viola_Jones_2001}.
 OpenCV was also used to implement blurring in an image as the 3D equivalent would be more computationally expensive.
