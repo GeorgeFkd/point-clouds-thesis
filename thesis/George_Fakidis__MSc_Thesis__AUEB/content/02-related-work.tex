@@ -14,7 +14,7 @@
 Depending on the use case and the capture device points can be associated with other data such as colors and reflectance properties \cite{Point}.
 Point clouds are captured using specialized devices such as LiDAR(Light Detection and Ranging) cameras that project laser pulses and measure return time in order to provide the third dimension of the points \cite{Lidar_2026}.
 In this work we are using an Intel Realsense camera seen in \ref{fig:related:2} which is a stereo-depth camera that combines two infrared lenses and an RGB lens in order to provide a colored point cloud.
-There are other technologies for achieving this result but are out of the scope of this work. LiDAR cameras are mostly utilised in cars for achieving self-driving capabilities.
+There are other technologies for achieving this result but are out of the scope of this work. LiDAR cameras are mostly utilized in cars for achieving self-driving capabilities.
 Other scenarios are outside of the scope of this work.
 The most popular file formats for point clouds are .PLY which is a polygon file format (binary and ascii text variants) and .LAS for LiDAR data. This is where i can mention the intel realsense contribution.
 
@@ -65,7 +65,12 @@ In this work the authors introduce PointNet, a neural network architecture that 
 
 \par In \cite{zhou_voxelnet_2018} the authors take a different approach and instead of raw-point clouds their model, VoxelNet, uses voxels as the data representation, allowing them to take advantage of more points in a point cloud efficiently. More specifically they introduce a voxel feature encoding layer(VFE) layer that summarizes point-wise features in a voxel. Stacking VFE layers achieves a high-dimensional representation, which is then used by a region proposal network(RPN) for object detection.
 
-\par In \cite{Lang_Vora_Caesar_Zhou_Yang_Beijbom_2019} the authors propose PointPillars, an architecture that consumes point clouds as input and outputs 3D bounding boxes for the labels car,pedestrian and cyclist. Instead of doing full voxelization like in \cite{zhou_voxelnet_2018} they cut the point cloud into slices along the z direction, called pillars, which improves performance significantly reaching 16ms for detection. They use a simplified PointNet to generate features which is fed into a 2D convolutional network to produce a high-level representation of the features. Lastly they use a standard Single Shot Detector(SSD) to do the 3D object detection. We attempt to use this model in our experiments as it is the fastest one and we found pretrained weights for it.
+\par In \cite{Lang_Vora_Caesar_Zhou_Yang_Beijbom_2019} the authors propose PointPillars, an architecture that consumes point clouds as input and outputs 3D bounding boxes for the labels car,pedestrian and cyclist. Instead of doing full voxelization like in \cite{zhou_voxelnet_2018} they cut the point cloud into slices along the z direction, called pillars, which improves performance significantly reaching 16ms for detection.
+They use a simplified PointNet to generate features which is fed into a 2D convolutional network to produce a high-level representation of the features.
+Lastly they use a standard Single Shot Detector(SSD) to do the 3D object detection. We attempt to use this model in our experiments as it is the fastest one and we found pretrained weights for it.
+
+\par In \cite{Simony_Milzy_Amendey_Gross_2018} the authors present Complex-Yolo, an architecture that uses a bird's eye view produced by a colored \ac{PC} which is then fed into a simplified YOLOv2 network layer with an additional \ac{RPN} layer that regresses to the orientation of the final bounding box.
+They achieve a considerable performance of 50 fps on an NVIDIA TitanX GPU, and for training they used the dataset from \cite{geiger_are_2012}.
 
 \par In \cite{shi_pointrcnn_2019} the authors propose a 2 stage object detection methodology based on R-CNNs and PointNet++ as a backbone network. The first stage generates a small number of 3D bounding boxes and separates points into foreground and background ones. The second stage then refines those proposals using the information produced in the first stage.
 
@@ -103,9 +108,18 @@ The SUN RGB-D dataset from \cite{Song_Lichtenberg_Xiao_2015} contains 10.335 RGB
 The rich information of this dataset makes it suitable for a variety of tasks in the general domain of scene understanding.
 
 
-\subsection{Privacy preservation in images}
-Important for many reasons e.g. the digital mask paper that says that it helps people submit their facial image for medical purposes.
-Blurring,Pixelation, I know that person paper, face swapping
+\subsection{Privacy in images}
+Privacy is important in many domains such as pedestrian tracking \cite{Kunchala_Bouroche_Schoen-Phelan_2023,Zhao_Zhang_Demiris_2024,Ohno_Ukyo_Amano_Rizk_Yamaguchi_2023} and medicine \cite{Yang_Lyu_Wang_Wen_Zhao_Chen_Bi_Meng_Mao_Xiao_2022}.
+To ensure privacy in images, in our specific case hiding faces and people, there are several methods that can be implemented.
+Blurring is the most popular one which obfuscates an image by replacing pixel values with a weighted average of its neighbors, where the weights most often follow a Gaussian distribution based on the distance of the neighboring pixel from the original pixel.
+Pixelation is another popular technique where the image is first divided into pixel blocks. Each pixel block takes as color the average color of all the pixels in the block.
+Those methods often fail to completely remove identifiable information, as discussed in \cite{Reid_Samangooei_Chen_Nixon_Ross_2013}.
+Blurring and pixelation belong to the category of image filtering techniques for privacy protection \cite{Padilla-López_Chaaraoui_Flórez-Revuelta_2015}.
+There are more sophisticated methods, mostly based on \ac{GAN}s such as the approach taken in \cite{Brkic_Sikiric_Hrkac_Kalafatic_2017}, where both biometric(e.g. faces) and non-biometric information such as clothing and hairstyle are replaced.
+Another method that is also used in such scenarios is face swapping as seen in works such as \cite{Zhao_Zhang_Demiris_2024,Li_Ma_Yan_Zhu_Yang_2023,Yoo_Choi_Choi_Kim_2023}. In the source image, faces are swapped with similar faces and integrated into the image for a smooth and consistent result.
+To address limitations of \ac{GAN}s the work of \cite{Cui_Wu_Zhan_Lu_2023} introduces Face transformer, a Transformer-based network architecture that achieves considerably detailed face swapping results.
+To achieve privacy protection the person can also take some preventive measures to evade existing face detection and face recognition systems, presented in \cite{Hasan_Guest_Deravi_2023}. However, this is outside of the scope of this work and we do not investigate it further.
+
 
 \section{Related Work}
 In \cite{ullah_real-time_2022} the authors implement a real-time system for human face detection and recognition.

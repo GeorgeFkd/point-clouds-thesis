@@ -15,7 +15,7 @@ The setting is at an office, an indoor place, with either not harsh natural ligh
 normal overhead office lights.
 What we want to achieve is to cover people and faces that appear in the point cloud
 frame of the camera using a simple blurring effect. There are more advanced techniques
-for anonymization, such as the sophisticated face swapping demonstrated in \cite{Zhao_Zhang_Demiris_2024}.
+for anonymization as previously discussed, such as the sophisticated face swapping demonstrated in \cite{Zhao_Zhang_Demiris_2024}.
 
 \section{Demonstration}
 \label{sec:system:sec0}
@@ -71,9 +71,10 @@ Python was the programming language of choice in this project, as most AI relate
 support python. Another reason was to speed up development, otherwise it would make more
 sense to implement everything in C++ as AI models and related libraries are usually implemented in it.
 Several tools were used in order to focus more on the use case and less on the implementation
-details.
-\href{https://github.com/isl-org/Open3D}{\emph{Open3D}} is a C++ based library with a python wrapper for convenience made by the Intelligent Systems Lab organization from Intel for processing and visualizing \ac{PC}s. It supports both PyTorch and Tensorflow as the 3D machine learning base tool and supports GPU acceleration for computationally expensive 3D operations.
+details outlined in \ref{fig:technologies}.
+\href{https://github.com/isl-org/Open3D}{\emph{Open3D}} is a C++ based library with a python wrapper for convenience made by the Intelligent Systems Lab organization from Intel for processing and visualizing \ac{PC}s.
 \href{https://github.com/isl-org/Open3D-ML/}{\emph{Open3D-ML}} is an extension to the open3D library that focuses on AI-based tasks such as object detection and semantic segmentation.
+It supports both PyTorch and Tensorflow as the 3D machine learning base tool and supports GPU acceleration for computationally expensive 3D operations.
 Both libraries are properly maintained and were used in this work.
 For 3D object detection only the PointPillars and PointRCNN models are implemented and pretrained on the KITTI dataset in both PyTorch and Tensorflow implementations.
 
@@ -86,9 +87,51 @@ Gaussian as the weights follow a Gaussian distribution, which in this case resul
 We also used the OpenCV DNN module to do general object detection using a MobileNet-SSD implementation with pretrained weights and network architecture provided by a \emph{.caffemodel} and a \emph{.prototxt} file respectively.
 We used \href{https://pypi.org/project/pyrealsense2/}{\emph{Pyrealsense2}} from Intel's official SDK for Realsense cameras,for interfacing with the camera D435I.
 
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}[
+			box/.style={rectangle, rounded corners, draw, minimum width=2.5cm, minimum height=1.5cm, align=center, font=\small},
+			category/.style={rectangle, rounded corners, draw, fill=gray!20, minimum width=3.5cm, minimum height=0.8cm, align=center, font=\small\bfseries}
+		]
+		% 2D Processing
+		\node[category] (2d) at (0, 6) {2D Processing};
+		\node[box] (opencv) at (3.5, 6) {%
+			\includegraphics[height=0.6cm]{figs/opencv.png}\\OpenCV};
+		\node[box] (haar) at (6.5, 7) {Haar Cascade\\{\tiny Face Detection}};
+		\node[box] (dnn) at (6.8, 5) {DNN Module\\{\tiny Object Detection, MobileNet-SSD}};
+		\draw[->] (2d) -- (opencv);
+		\draw[->] (opencv) -- (haar);
+		\draw[->] (opencv) -- (dnn);
+
+		% 3D Processing
+		\node[category] (3d) at (0, 3) {Point cloud Processing \\ \& Visualization};
+		\node[box] (open3d) at (3.5, 3) {%
+			\includegraphics[height=0.6cm]{figs/open3d.png}\\Open3D};
+		\draw[->] (3d) -- (open3d);
+
+		% 3D ML
+		\node[category] (3dml) at (0, 1) {3D Object Detection \&\\Segmentation};
+		\node[box] (open3dml) at (3.5, 1) {%
+		\includegraphics[height=0.6cm]{figs/open3dml.png}\\Open3D-ML\\{\tiny PointPillars, PointRCNN}};
+		\draw[->] (3dml) -- (open3dml);
+
+		% Camera
+		\node[category] (cam) at (0, -1) {Camera};
+		\node[box] (rs) at (3.5, -1) {Pyrealsense2\\{\tiny Python Wrapper}};
+		\node[box] (cam2) at (7.0, -1) {%
+			\includegraphics[height=0.6cm]{figs/realsense.png}\\RealSense D435I};
+		\draw[->] (cam) -- (rs);
+		\draw[->] (rs.east) -- (cam2.west);
+
+	\end{tikzpicture}
+	\caption{Technologies used in the system implementation}
+	\label{fig:technologies}
+\end{figure}
+
 Tools that were not used that could otherwise be useful are the following:
 \begin{itemize}
 	\item \href{https://github.com/open-mmlab/OpenPCDet}{\emph{OpenPCDet}}, it heavily depended on CUDA without AMD GPU/CPU equivalents which was not available in this work.
 	\item \href{https://github.com/open-mmlab/mmdetection3d}{\emph{MMDetection3D}}, supports lots of models we reviewed but had issues when trying to integrating with our work, a great tool nonetheless. In detail, the problem was that it required a different version of PyTorch(1.8+) in contrast to Open3D (2.2+).
 	\item \href{https://github.com/vinits5/learning3d}{\emph{Learning3D}}, does not support many models, we tried to use it and did not have the desired results. Also integrating with our existing code would be infeasible as it required pytorch 1.3+ and a CUDA GPU.
+	\item \href{https://github.com/NVIDIA-AI-IOT/CUDA-PointPillars}{\emph{CUDA-PointPillars}}, a CUDA optimized implementation of PointPillars from NVIDIA that achieves comparable detection performance but at considerable less time, 6.84ms.
 \end{itemize}
