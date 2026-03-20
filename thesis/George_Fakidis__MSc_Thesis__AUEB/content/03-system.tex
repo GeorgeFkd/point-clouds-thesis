@@ -4,18 +4,19 @@
 \label{sec:system}
 
 \section{Work Setting}
-We use an Intel Realsense camera model D435I as can be seen in \href{https://www.intel.com/content/www/us/en/products/sku/190004/intel-realsense-depth-camera-d435i/specifications.html}{Intel's official specification}. Its technical specs are the following:
+We use an Intel Realsense camera model D435I as seen in \ref{fig:related:2}.Its technical specs are the following:
 \begin{itemize}
-	\item Resolution:1280x720
-	\item Depth Field of View: 87 degrees wide horizontally, 58 degrees vertically
-	\item FPS:30
-	\item Operating range: Min. 0.3m, Max 3m
+	\item \emph{Resolution}: 1280x720
+	\item \emph{Depth Field of View}: 87 degrees wide horizontally, 58 degrees vertically
+	\item \emph{FPS}: 30
+	\item \emph{Operating range}: Min. 0.3m, Max 3m
 \end{itemize}
+For a more complete view of the technical specifications one can consult \href{https://www.intel.com/content/www/us/en/products/sku/190004/intel-realsense-depth-camera-d435i/specifications.html}{Intel's official specification}.
+
 The setting is at an office, an indoor place, with either not harsh natural light or
 normal overhead office lights.
-What we want to achieve is to cover people and faces that appear in the point cloud
-frame of the camera using a simple blurring effect. There are more advanced techniques
-for anonymization as previously discussed, such as the sophisticated face swapping demonstrated in \cite{Zhao_Zhang_Demiris_2024}.
+What we want to achieve is to cover people and faces that appear in the point cloud frame of the camera using a simple blurring effect.
+There are more advanced techniques for anonymization as previously discussed, such as the sophisticated face swapping demonstrated in \cite{Zhao_Zhang_Demiris_2024}.
 
 \section{Demonstration}
 \label{sec:system:sec0}
@@ -26,25 +27,25 @@ returning a label and a box in either 2D or 3D coordinates based on the data it 
 Finally the rendering engine applies all the blurring effects based on the detection results and renders
 the resulting pointcloud as it can be seen in \ref{fig:system:2}.
 A trivial semantic segmentation scenario was implemented using the RANDLaNet and KPFCNN models
-provided with pretrained weights from a library we used. The results looks like the figure \ref{fig:system:4}.
-An unsuccessfull 3D object detection was attempted using the PointPillars model from \cite{Lang_Vora_Caesar_Zhou_Yang_Beijbom_2019}. The failure most likely stems from improper configuration for our scenario and the specific camera specifications.
+provided with pretrained weights from a library we used(open3d-ml, discussed in section \ref{sec:system:sec2}). The results looks like the figure \ref{fig:system:4}.
+\begin{figure}[htb]
+	\includegraphics[width=\textwidth]{figs/Semantic-Segmentation-Example.pdf}
+	\caption{Semantic segmentation using RandLaNet and KPFCNN from Open3D library.}
+	\label{fig:system:4}
+\end{figure}
+
+An unsuccessfull 3D object detection was attempted using the PointPillars model from \cite{Lang_Vora_Caesar_Zhou_Yang_Beijbom_2019}.
+The failure most likely stems from improper configuration for our scenario and the specific camera specifications.
 
 \begin{figure}[htb]
 	\includegraphics[width=\textwidth]{figs/Pointcloud-Face-Without-Blur.pdf}
 	\caption{Point cloud rendered without blurring faces and people}
 	\label{fig:system:1}
 \end{figure}
-
 \begin{figure}[htb]
 	\includegraphics[width=\textwidth]{figs/Face-Blurred-With-2D-Detection-And-Blur.pdf}
 	\caption{Point cloud rendered with blurred faces(The bounding box demonstrates we can also add 3D detections)}
 	\label{fig:system:2}
-\end{figure}
-
-\begin{figure}[htb]
-	\includegraphics[width=\textwidth]{figs/Semantic-Segmentation-Example.pdf}
-	\caption{Semantic segmentation using RandLaNet and KPFCNN from Open3D library.}
-	\label{fig:system:4}
 \end{figure}
 
 \section{Design}
@@ -58,7 +59,6 @@ The EffectsManager class is responsible for all of the tools that will operate o
 point cloud data. It ensures that all of the detection tools use as input the same data without mutations.
 In addition, it could allow for running the detections in parallel for better performance and for toggling
 tools on and off based on certain conditions or user input.
-
 \begin{figure}
 	\includegraphics[width=\textwidth]{figs/Uml-Diagram-Thesis-Final.pdf}
 	\caption{UML Class Diagram for system architecture}
@@ -76,14 +76,12 @@ details outlined in \ref{fig:technologies}.
 \href{https://github.com/isl-org/Open3D-ML/}{\emph{Open3D-ML}} is an extension to the open3D library that focuses on AI-based tasks such as object detection and semantic segmentation.
 It supports both PyTorch and Tensorflow as the 3D machine learning base tool and supports GPU acceleration for computationally expensive 3D operations.
 Both libraries are properly maintained and were used in this work.
-For 3D object detection only the PointPillars and PointRCNN models are implemented and pretrained on the KITTI dataset in both PyTorch and Tensorflow implementations.
+For 3D object detection the PointPillars model was used as the research indicated it is reasonably fast and within this library it is implemented and pretrained on the KITTI dataset in both PyTorch and Tensorflow implementations.
 
 \href{https://opencv.org/}{\emph{OpenCV}} is the industry standard when it comes to computer vision in 2D scenarios. We used this library for doing 2D face detection as a fallback because the \ac{PC} based models were too complicated to setup and expensive to fine-tune. More specifically we used the Haar Cascade Classifier in openCV that is based on early machine learning work at \cite{Viola_Jones_2001}.
 OpenCV was also used to implement blurring in an image as the 3D equivalent would be more computationally expensive.
 Gaussian blurring replaces each pixel's value with a weighted average of its neighboring pixels.
 Gaussian as the weights follow a Gaussian distribution, which in this case results in pixels closer to the center contributing more than the pixels further away to the final color of the blurred pixel.
-
-
 We also used the OpenCV DNN module to do general object detection using a MobileNet-SSD implementation with pretrained weights and network architecture provided by a \emph{.caffemodel} and a \emph{.prototxt} file respectively.
 We used \href{https://pypi.org/project/pyrealsense2/}{\emph{Pyrealsense2}} from Intel's official SDK for Realsense cameras,for interfacing with the camera D435I.
 
@@ -91,7 +89,7 @@ We used \href{https://pypi.org/project/pyrealsense2/}{\emph{Pyrealsense2}} from 
 	\centering
 	\begin{tikzpicture}[
 			box/.style={rectangle, rounded corners, draw, minimum width=2.5cm, minimum height=1.5cm, align=center, font=\small},
-			category/.style={rectangle, rounded corners, draw, fill=gray!20, minimum width=3.5cm, minimum height=0.8cm, align=center, font=\small\bfseries}
+			category/.style={rectangle, rounded corners, draw, fill=gray!20, minimum width=3.5cm, minimum height=0.8cm, align=center, font=\small\bfseries},
 		]
 		% 2D Processing
 		\node[category] (2d) at (0, 6) {2D Processing};
@@ -127,7 +125,6 @@ We used \href{https://pypi.org/project/pyrealsense2/}{\emph{Pyrealsense2}} from 
 	\caption{Technologies used in the system implementation}
 	\label{fig:technologies}
 \end{figure}
-
 Tools that were not used that could otherwise be useful are the following:
 \begin{itemize}
 	\item \href{https://github.com/open-mmlab/OpenPCDet}{\emph{OpenPCDet}}, it heavily depended on CUDA without AMD GPU/CPU equivalents which was not available in this work.
