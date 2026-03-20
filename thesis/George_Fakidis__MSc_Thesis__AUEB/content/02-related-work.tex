@@ -50,7 +50,7 @@ These cubes are also known as \emph{voxels} in the literature and are primarily 
 
 % \Blindtext[1][1]
 
-\subsection{Object detection in point clouds}
+\subsection{Object detection and Semantic Segmentation in point clouds}
 Object detection in \ac{PC}s imposes extra constraints on the AI architectures developed for learning based tasks.
 The model result should ideally follow some prescriptive rules in order to be effective at the task at hand as outlined in \cite{qi_pointnet_2017}. Those rules are implicitly followed in all methodologies presented in this section.
 \begin{enumerate}
@@ -87,6 +87,15 @@ The second stage then refines those proposals using the information produced in 
 
 \par The work in \cite{pan_3d_2021} introduces PointFormer, a Transformer based backbone for learning features from point clouds. To capture local, global and the interplay between local and global information the authors create a local Transformer(LT) module, a global Transformer (GT) module and a local-global transformer (LGT). The LT module learns features in small regions, the GT module learns context-aware representations at the captured point cloud level while the LGT aggregates local features into the context used by the global transformer.
 
+\par The authors at \cite{Hu_Yang_Xie_Rosa_Guo_Wang_Trigoni_Markham_2020} present Randla-net, network architecture based on random sampling and shared \ac{MLP}s which make it extremely efficient in contrast to other models.
+We utilise Randla-net in the semantic segmentation scenario because the tools we used provided pretrained weights for it.
+
+\par The work in \cite{Thomas_Qi_Deschaud_Marcotegui_Goulette_Guibas_2019} introduces a novel point convolution operator that places learnable weights at a set of kernel points in Euclidean space and applies them to neighboring points, allowing convolution to operate directly on raw point clouds without any intermediate representation.
+The paper presents two network architectures built on this operator: KP-CNN for object classification and KP-FCNN for semantic segmentation.
+We utilise KP-FCNN in our semantic segmentation example as there were available pretrained weights.
+
+
+
 
 \label{sec:related:sec12}
 
@@ -99,7 +108,7 @@ The point clouds are first pre-processed by removing the ground points and thus 
 As we will see in the datasets section most datasets include the category \emph{pedestrian} which is a less invasive process in contrast to faces.
 
 
-\subsection{Datasets for point clouds object detection}
+\subsection{Datasets for point clouds learning}
 For face detection extra processes are required to get
 access to the datasets.
 Datasets containing faces are mostly for tasks such as face recognition, pose estimation and other tasks that require more tuning than conventional object detection.
@@ -116,8 +125,9 @@ The \emph{JRDB} dataset introduced in \cite{Martín-Martín_Patel_Rezatofighi_Sh
 The dataset was then annotated with 3D bounded boxes by human labelers for pedestrians.
 
 The \emph{SUN RGB-D} dataset from \cite{Song_Lichtenberg_Xiao_2015} contains 10.335 RGB-D images that are annotated with 2D polygons and 3D bounding boxes for objects, taken with four different rgb-d devices.
-The rich information of this dataset makes it suitable for a variety of tasks in the general domain of scene understanding.
+The rich information of this dataset makes it suitable for a variety of tasks in the general domain of scene understanding and more specifically for object detection and semantic segmentation which we are interested in.
 
+TODO: Add semantic datasets.
 
 \subsection{Privacy in images}
 Privacy is important in many domains such as pedestrian tracking \cite{Kunchala_Bouroche_Schoen-Phelan_2023,Zhao_Zhang_Demiris_2024,Ohno_Ukyo_Amano_Rizk_Yamaguchi_2023} and medicine \cite{Yang_Lyu_Wang_Wen_Zhao_Chen_Bi_Meng_Mao_Xiao_2022}.

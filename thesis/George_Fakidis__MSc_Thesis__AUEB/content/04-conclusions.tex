@@ -5,7 +5,7 @@
 
 \section{Limitations}
 
-We weren't able to properly implement a \ac{PC} face detection model for the following reasons:
+We weren't able to properly integrate a \ac{PC} face detection model for the following reasons:
 \begin{itemize}
 	\item Training a 3D based model is expensive computation wise and time wise so we could only use pretrained things.
 	\item Face detection is not addressed specifically in tasks so we tried to use the pedestrian category.
@@ -54,3 +54,14 @@ pipelines for 3D video anonymization would enable privacy-compliant data collect
 at scale. Such pipelines would need to handle temporal and visual consistency across frames,
 real-time performance, and robustness to challenging conditions, representing a
 significant but impactful engineering and research challenge.
+
+\textbf{Dataset creation with indoor scenes including people.}
+Existing datasets mostly include a pedestrian/person category in outdoor settings involving driving, which means people are mostly walking upright and there is not a variety of poses.
+Indoor large-scale datasets such as SUN RGB-D at \cite{Song_Lichtenberg_Xiao_2015} are more geared towards objects and rooms that do not include people.
+Creating a dataset specifically addressing this case could possibly enable a wider range of use cases and applications of \ac{PC}-based people detection.
+
+\textbf{Investigation of hybrid approaches for people detection.}
+Hybrid approaches, meaning combining 2D and 3D people detection cohesively, could be investigated to see its effectiveness.
+Intuitively, at short distance 2D methods should perform better and 3D methods should be more effective at larger distances(as most datasets used cover around 30-40 meters of distance in front of the LiDAR device).
+
+
