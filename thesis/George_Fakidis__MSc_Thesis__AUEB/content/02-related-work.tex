@@ -26,7 +26,7 @@ Not to be confused with face recognition, which is about comparing a face scan a
 In that domain there is more focus about extracting facial features and trying to discern different faces.
 In this work we only explore object and face detection and not face recognition.
 \emph{Semantic segmentation} is a task similar to object detection but differs in the prediction it provides.
-Instead of predicting boxes that contain objects, it classifies each point in the \ac{PC} as belonging to a specific class.
+Instead of predicting boxes that contain objects, it classifies each point in the \ac{PC} as belonging to a specific class. As there is the assumption that each point belongs to a class, there is always an unlabeled class in models.
 An example from our own experimentation with pretrained models can be seen in \ref{fig:related:3}.
 
 \par Point clouds produced by LiDAR cameras are $\sim$ 300K points per frame, a number changing based on the technical specification of the camera.
@@ -113,21 +113,48 @@ For face detection extra processes are required to get
 access to the datasets.
 Datasets containing faces are mostly for tasks such as face recognition, pose estimation and other tasks that require more tuning than conventional object detection.
 They differ significantly from object detection datasets as they already have cropped and aligned the faces in the data without leaving the rest of the background intact.
-Most datasets for object detection in point clouds are for scenarios involving self-driving vehicles and are captured by LiDAR devices.
-They have pedestrians as a category but not faces.
+Most datasets for object detection and semantic segmentation in point clouds are for scenarios involving self-driving vehicles and are captured by LiDAR devices.
+They include pedestrians as a category but not faces.
+An overview of the datasets can be seen in \ref{tab:datasets}.
 
 The work at \cite{geiger_are_2012} created \href{https://www.cvlibs.net/datasets/kitti/eval_object.php?obj_benchmark=3d}{KITTI}, one of the earliest benchmarks and datasets for LiDAR-based 3D object detection, annotating classes such as car, pedestrian, and cyclist.
+The \emph{nuScenes} dataset from \cite{Caesar_Bankiti_Lang_Vora_Liong_Xu_Krishnan_Pan_Baldan_Beijbom_2020} is richly annotated with 23 labeled classes and 8 attributes, improving upon \emph{KITTY}. It differs from previous work significantly as it uses all of the available autonomous vehicle sensors with a full 360 degree field of view.
 In \cite{mao_one_2021} the authors present ONCE, a dataset with 1 million LiDAR scenes and annotations for 15 classes.
 The \emph{Argoverse 2} dataset is introduced in \cite{wilson_argoverse_2023}, notable for its broad 26-category taxonomy,
 that extends beyond common driving objects to include rare classes such as strollers, wheelchairs, and animals.
-
 The \emph{JRDB} dataset introduced in \cite{Martín-Martín_Patel_Rezatofighi_Shenoi_Gwak_Frankel_Sadeghian_Savarese_2023} contains around an hour of sensor data in an uncontrolled environment, including data from LIDAR channels and an RGBD camera, produced from a mobile robot.
 The dataset was then annotated with 3D bounded boxes by human labelers for pedestrians.
-
 The \emph{SUN RGB-D} dataset from \cite{Song_Lichtenberg_Xiao_2015} contains 10.335 RGB-D images that are annotated with 2D polygons and 3D bounding boxes for objects, taken with four different rgb-d devices.
 The rich information of this dataset makes it suitable for a variety of tasks in the general domain of scene understanding and more specifically for object detection and semantic segmentation which we are interested in.
 
-TODO: Add semantic datasets.
+Datasets for \emph{semantic segmentation} are also important and mostly include outdoor scenes and driving footage. They are either new datasets or annotated versions of existing datasets.
+The \emph{semanticKitti} dataset from \cite{Behley_Garbade_Milioto_Quenzel_Behnke_Stachniss_Gall_2019} was created by annotating appropriately the KITTI Vision Odometry Benchmark from \cite{geiger_are_2012}.
+The \emph{Toronto-3D} dataset from \cite{Tan_Qin_Ma_Li_Du_Cai_Yang_Li_2020} was created using a \ac{MLS} system in Toronto,Canada. It uses 8 labeled object classes and consists of $\sim$ 75 million points.
+They also have a ranking list of models and how well they perform using this dataset at \href{https://github.com/WeikaiTan/Toronto-3D}{their github repository}.
+The \emph{Semantic3D.net} dataset from \cite{Hackel_Savinov_Ladicky_Wegner_Schindler_Pollefeys_2017} provides dense point clouds acquired with static terrestrial lasers scanners. Each scan contains $\sim$ 400million points, making it the highest resolution amongst all datasets.
+The \emph{nuScenes-lidarseg} dataset from \cite{Fong_Mohan_Hurtado_Zhou_Caesar_Beijbom_Valada_2022} was created by annotation work for semantic segmentation on the \cite{Caesar_Bankiti_Lang_Vora_Liong_Xu_Krishnan_Pan_Baldan_Beijbom_2020} \emph{nuScenes} dataset.
+
+\begin{table}[h]
+	\centering
+	\begin{tabular}{lllll}
+		\toprule
+		\textbf{Dataset}                                                                        & \textbf{Task}         & \textbf{Classes} & \textbf{Setting} & \textbf{Size}       \\
+		\midrule
+		KITTI \cite{geiger_are_2012}                                                            & Object Detection      & 3                & Outdoor          & 7,481 frames        \\
+		nuScenes \cite{Caesar_Bankiti_Lang_Vora_Liong_Xu_Krishnan_Pan_Baldan_Beijbom_2020}      & Object Detection      & 23               & Outdoor          & 1,000 scenes        \\
+		ONCE \cite{mao_one_2021}                                                                & Object Detection      & 15               & Outdoor          & 1M scenes           \\
+		Argoverse 2 \cite{wilson_argoverse_2023}                                                & Object Detection      & 26               & Outdoor          & 1,000 scenarios     \\
+		JRDB \cite{Martín-Martín_Patel_Rezatofighi_Shenoi_Gwak_Frankel_Sadeghian_Savarese_2023} & Object Detection      & 1                & Indoor/Outdoor   & $\sim$1 hour        \\
+		SUN RGB-D \cite{Song_Lichtenberg_Xiao_2015}                                             & Both                  & 37               & Indoor           & 10,335 images       \\
+		SemanticKITTI \cite{Behley_Garbade_Milioto_Quenzel_Behnke_Stachniss_Gall_2019}          & Semantic Segmentation & 28               & Outdoor          & 43,000+ scans       \\
+		Toronto-3D \cite{Tan_Qin_Ma_Li_Du_Cai_Yang_Li_2020}                                     & Semantic Segmentation & 8                & Outdoor          & $\sim$75M points    \\
+		Semantic3D \cite{Hackel_Savinov_Ladicky_Wegner_Schindler_Pollefeys_2017}                & Semantic Segmentation & 8                & Outdoor          & $\sim$400M pts/scan \\
+		nuScenes-lidarseg \cite{Fong_Mohan_Hurtado_Zhou_Caesar_Beijbom_Valada_2022}             & Semantic Segmentation & 32               & Outdoor          & 40,000 scans        \\
+		\bottomrule
+	\end{tabular}
+	\caption{Overview of datasets for 3D object detection and semantic segmentation}
+	\label{tab:datasets}
+\end{table}
 
 \subsection{Privacy in images}
 Privacy is important in many domains such as pedestrian tracking \cite{Kunchala_Bouroche_Schoen-Phelan_2023,Zhao_Zhang_Demiris_2024,Ohno_Ukyo_Amano_Rizk_Yamaguchi_2023} and medicine \cite{Yang_Lyu_Wang_Wen_Zhao_Chen_Bi_Meng_Mao_Xiao_2022}.
