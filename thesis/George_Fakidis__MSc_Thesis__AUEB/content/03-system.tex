@@ -15,9 +15,15 @@ For a more complete view of the technical specifications one can consult \href{h
 
 The setting is at an office, an indoor place, with either not harsh natural light or
 normal overhead office lights.
+A simple rendering of a point cloud can be seen in \ref{fig:system:1}.
 What we want to achieve is to cover people and faces that appear in the point cloud frame of the camera using a simple blurring effect.
 There are more advanced techniques for anonymization as previously discussed, such as the sophisticated face swapping demonstrated in \cite{Zhao_Zhang_Demiris_2024}.
 
+\begin{figure}[hb]
+	\includegraphics[width=0.45\textwidth]{figs/Pointcloud-Face-Without-Blur.pdf}
+	\caption{Point cloud rendered without blurring faces and people}
+	\label{fig:system:1}
+\end{figure}
 \section{Demonstration}
 \label{sec:system:sec0}
 The software works by first reading the depth and color frame at each iteration of the program.
@@ -26,8 +32,15 @@ returning a label and a box in either 2D or 3D coordinates based on the data it 
 2D object detection modules can use only the color frame to run their detection.
 Finally the rendering engine applies all the blurring effects based on the detection results and renders
 the resulting pointcloud as it can be seen in \ref{fig:system:2}.
+
+\begin{figure}[h]
+	\includegraphics[width=0.75\textwidth]{figs/Face-Blurred-With-2D-Detection-And-Blur.pdf}
+	\caption{Point cloud rendered with blurred faces(The bounding box demonstrates we can also add 3D detections)}
+	\label{fig:system:2}
+\end{figure}
+
 A trivial semantic segmentation scenario was implemented using the RANDLaNet and KPFCNN models
-provided with pretrained weights from a library we used(open3d-ml, discussed in section \ref{sec:system:sec2}). The results looks like the figure \ref{fig:system:4}.
+provided with pretrained weights from a library we used(open3d-ml, discussed in section \ref{sec:system:sec2}). The results can be seen in figure \ref{fig:system:4}.
 \begin{figure}[htb]
 	\includegraphics[width=\textwidth]{figs/Semantic-Segmentation-Example.pdf}
 	\caption{Semantic segmentation using RandLaNet and KPFCNN from Open3D library.}
@@ -36,17 +49,10 @@ provided with pretrained weights from a library we used(open3d-ml, discussed in 
 
 An unsuccessfull 3D object detection was attempted using the PointPillars model from \cite{Lang_Vora_Caesar_Zhou_Yang_Beijbom_2019}.
 The failure most likely stems from improper configuration for our scenario and the specific camera specifications.
+Another likely root cause could be that such models are trained on datasets unlike our use case, both in setting and
+in scale(LiDAR scans often cover tens of meters ahead while our camera can only reach 3 meters).
 
-\begin{figure}[htb]
-	\includegraphics[width=\textwidth]{figs/Pointcloud-Face-Without-Blur.pdf}
-	\caption{Point cloud rendered without blurring faces and people}
-	\label{fig:system:1}
-\end{figure}
-\begin{figure}[htb]
-	\includegraphics[width=\textwidth]{figs/Face-Blurred-With-2D-Detection-And-Blur.pdf}
-	\caption{Point cloud rendered with blurred faces(The bounding box demonstrates we can also add 3D detections)}
-	\label{fig:system:2}
-\end{figure}
+
 
 \section{Design}
 \label{sec:system:sec1}

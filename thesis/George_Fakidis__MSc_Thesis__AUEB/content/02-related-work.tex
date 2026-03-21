@@ -10,7 +10,7 @@
 
 
 \subsection{Background Information and Terminology}
-\par Point clouds are a set of points positioned in three-dimensional space in the form of (x,y,z) coordinates, where z is the depth within the two-dimensional image.
+\par Point clouds are a set of points positioned in three-dimensional space in the form of $(x,y,z)$ coordinates, where $z$ is the depth within the two-dimensional image.
 Depending on the use case and the capture device points can be associated with other data such as colors and reflectance properties \cite{Point}.
 Point clouds are captured using specialized devices such as LiDAR(Light Detection and Ranging) cameras that project laser pulses and measure return time in order to provide the third dimension of the points \cite{Lidar_2026}.
 In this work we are using an Intel Realsense camera seen in \ref{fig:related:2} which is a stereo-depth camera that combines two infrared lenses and an RGB lens in order to provide a colored point cloud.
@@ -18,6 +18,9 @@ There are other technologies for achieving this result but are out of the scope 
 Other scenarios are outside of the scope of this work.
 The most popular file formats for point clouds are .PLY which is a polygon file format (binary and ascii text variants) and .LAS for LiDAR data.
 When using the \href{https://github.com/realsenseai/librealsense}{Realsense SDK}, I found a bug related to the export of textual .PLY files and fixed it and it was accepted upstream as can be seen in \href{https://github.com/realsenseai/librealsense/pull/14711}{\textbf{this Github Pull Request}}.
+
+\emph{\ac{BEV}} is a 2D projection of a 3D point cloud onto the ground plane, effectively collapsing the vertical dimension and representing the scene as if viewed from directly above.
+It is commonly used in point clouds learning as it allows the use of standard 2D convolutional networks, and provides a natural representation for detecting objects such as cars and pedestrians whose size remains consistent regardless of distance from the sensor.
 
 \emph{Object detection} is a domain of computer vision that attempts to classify objects within an image and find their bounds.
 In the case of 2D object detection it is about providing a rectangle and in \ac{PC}s it is about providing a cube.
@@ -34,17 +37,13 @@ In some cases point clouds are converted into a three-dimensional grid comprised
 These cubes are also known as \emph{voxels} in the literature and are primarily used for reducing the computational cost of operations on \ac{PC}s and grouping neighboring points.
 
 
-\begin{figure}[htb]
-	\includegraphics[width=\textwidth]{figs/Realsense-Camera.pdf}
+\begin{figure}[h]
+	\includegraphics[width=0.5\textwidth]{figs/Realsense-Camera.pdf}
 	\caption{Intel Realsense stereo-depth camera, model D435I}
 	\label{fig:related:2}
 \end{figure}
 
-\begin{figure}[htb]
-	\includegraphics[width=\textwidth]{figs/Semantic-Segmentation-Example.pdf}
-	\caption{Semantic segmentation example on a captured point cloud using pretrained models.}
-	\label{fig:related:3}
-\end{figure}
+
 
 \label{sec:related:sec11}
 
@@ -62,8 +61,7 @@ The model should be able to handle sparse point clouds, as they commonly occur w
 
 Foundational work in object detection for \ac{PC}s has been done in \cite{qi_pointnet_2017}.
 In this work the authors introduce \emph{PointNet}, a neural network architecture that operates on \ac{PC}s and not some other derivative form as we will see in other approaches. They approximate a symmetric function by utilising a \ac{MLP} and a max-pooling function and therefore achieving the first model requirement as outlined earlier. The work in this model and the refined version in the next paragraph is reused in newer architectures.
-
-\par The authors of PointNet followed up on their work and presented \cite{qi_pointnet_2017-1} where they introduce an enhanced version of PointNet, called \emph{PointNet++}.
+The authors of PointNet followed up on their work and presented \cite{qi_pointnet_2017-1} where they introduce an enhanced version of PointNet, called \emph{PointNet++}.
 In this work they replaced the single max pooling operation of PointNet with a hierarchical mechanism that samples centroids from the point cloud, groups the points in regions defined by the centroids and then extracts local features from the regions.
 In this way, patterns are captured in multiple scales making features more detailed and robust.
 
@@ -85,7 +83,9 @@ The second stage then refines those proposals using the information produced in 
 
 \par The work in \cite{shi_point-gnn_2020} brings the graph neural network(GNN) architecture into point clouds. It constructs a graph of the point cloud by adding edges between neighboring points in a fixed radius. For the detection it uses a \ac{MLP} for classification and a \ac{MLP} that computes a bounding box for each class.
 
-\par The work in \cite{pan_3d_2021} introduces PointFormer, a Transformer based backbone for learning features from point clouds. To capture local, global and the interplay between local and global information the authors create a local Transformer(LT) module, a global Transformer (GT) module and a local-global transformer (LGT). The LT module learns features in small regions, the GT module learns context-aware representations at the captured point cloud level while the LGT aggregates local features into the context used by the global transformer.
+\par The work in \cite{pan_3d_2021} introduces \emph{PointFormer}, a Transformer based backbone for learning features from point clouds.
+To capture local, global and the interaction between local and global information the authors create a local Transformer(LT) module, a global Transformer (GT) module and a local-global transformer (LGT).
+The LT module learns features in small regions, the GT module learns context-aware representations at the captured point cloud level while the LGT aggregates local features into the context used by the global transformer.
 
 \par The authors at \cite{Hu_Yang_Xie_Rosa_Guo_Wang_Trigoni_Markham_2020} present Randla-net, network architecture based on random sampling and shared \ac{MLP}s which make it extremely efficient in contrast to other models.
 We utilise Randla-net in the semantic segmentation scenario because the tools we used provided pretrained weights for it.
@@ -94,8 +94,11 @@ We utilise Randla-net in the semantic segmentation scenario because the tools we
 The paper presents two network architectures built on this operator: KP-CNN for object classification and KP-FCNN for semantic segmentation.
 We utilise KP-FCNN in our semantic segmentation example as there were available pretrained weights.
 
-
-
+\begin{figure}[h]
+	\includegraphics[width=\textwidth]{figs/Semantic-Segmentation-Example.pdf}
+	\caption{Semantic segmentation example on a captured point cloud using pretrained models.}
+	\label{fig:related:3}
+\end{figure}
 
 \label{sec:related:sec12}
 
@@ -120,8 +123,7 @@ An overview of the datasets can be seen in \ref{tab:datasets}.
 The work at \cite{geiger_are_2012} created \href{https://www.cvlibs.net/datasets/kitti/eval_object.php?obj_benchmark=3d}{KITTI}, one of the earliest benchmarks and datasets for LiDAR-based 3D object detection, annotating classes such as car, pedestrian, and cyclist.
 The \emph{nuScenes} dataset from \cite{Caesar_Bankiti_Lang_Vora_Liong_Xu_Krishnan_Pan_Baldan_Beijbom_2020} is richly annotated with 23 labeled classes and 8 attributes, improving upon \emph{KITTY}. It differs from previous work significantly as it uses all of the available autonomous vehicle sensors with a full 360 degree field of view.
 In \cite{mao_one_2021} the authors present ONCE, a dataset with 1 million LiDAR scenes and annotations for 15 classes.
-The \emph{Argoverse 2} dataset is introduced in \cite{wilson_argoverse_2023}, notable for its broad 26-category taxonomy,
-that extends beyond common driving objects to include rare classes such as strollers, wheelchairs, and animals.
+The \emph{Argoverse 2} dataset is introduced in \cite{wilson_argoverse_2023}, notable for its broad 26-category taxonomy.
 The \emph{JRDB} dataset introduced in \cite{Martín-Martín_Patel_Rezatofighi_Shenoi_Gwak_Frankel_Sadeghian_Savarese_2023} contains around an hour of sensor data in an uncontrolled environment, including data from LIDAR channels and an RGBD camera, produced from a mobile robot.
 The dataset was then annotated with 3D bounded boxes by human labelers for pedestrians.
 The \emph{SUN RGB-D} dataset from \cite{Song_Lichtenberg_Xiao_2015} contains 10.335 RGB-D images that are annotated with 2D polygons and 3D bounding boxes for objects, taken with four different rgb-d devices.
@@ -138,18 +140,18 @@ The \emph{nuScenes-lidarseg} dataset from \cite{Fong_Mohan_Hurtado_Zhou_Caesar_B
 	\centering
 	\begin{tabular}{lllll}
 		\toprule
-		\textbf{Dataset}                                                                        & \textbf{Task}         & \textbf{Classes} & \textbf{Setting} & \textbf{Size}       \\
+		\textbf{Dataset}                                                                        & \textbf{Task}         & \textbf{Classes} & \textbf{Setting} & \textbf{Size}             \\
 		\midrule
-		KITTI \cite{geiger_are_2012}                                                            & Object Detection      & 3                & Outdoor          & 7,481 frames        \\
-		nuScenes \cite{Caesar_Bankiti_Lang_Vora_Liong_Xu_Krishnan_Pan_Baldan_Beijbom_2020}      & Object Detection      & 23               & Outdoor          & 1,000 scenes        \\
-		ONCE \cite{mao_one_2021}                                                                & Object Detection      & 15               & Outdoor          & 1M scenes           \\
-		Argoverse 2 \cite{wilson_argoverse_2023}                                                & Object Detection      & 26               & Outdoor          & 1,000 scenarios     \\
-		JRDB \cite{Martín-Martín_Patel_Rezatofighi_Shenoi_Gwak_Frankel_Sadeghian_Savarese_2023} & Object Detection      & 1                & Indoor/Outdoor   & $\sim$1 hour        \\
-		SUN RGB-D \cite{Song_Lichtenberg_Xiao_2015}                                             & Both                  & 37               & Indoor           & 10,335 images       \\
-		SemanticKITTI \cite{Behley_Garbade_Milioto_Quenzel_Behnke_Stachniss_Gall_2019}          & Semantic Segmentation & 28               & Outdoor          & 43,000+ scans       \\
-		Toronto-3D \cite{Tan_Qin_Ma_Li_Du_Cai_Yang_Li_2020}                                     & Semantic Segmentation & 8                & Outdoor          & $\sim$75M points    \\
-		Semantic3D \cite{Hackel_Savinov_Ladicky_Wegner_Schindler_Pollefeys_2017}                & Semantic Segmentation & 8                & Outdoor          & $\sim$400M pts/scan \\
-		nuScenes-lidarseg \cite{Fong_Mohan_Hurtado_Zhou_Caesar_Beijbom_Valada_2022}             & Semantic Segmentation & 32               & Outdoor          & 40,000 scans        \\
+		KITTI \cite{geiger_are_2012}                                                            & Object Detection      & 3                & Outdoor          & 7,480 frames              \\
+		nuScenes \cite{Caesar_Bankiti_Lang_Vora_Liong_Xu_Krishnan_Pan_Baldan_Beijbom_2020}      & Object Detection      & 23               & Outdoor          & 1,000 scenes $\times$ 20s \\
+		ONCE \cite{mao_one_2021}                                                                & Object Detection      & 15               & Outdoor          & 1M scenes                 \\
+		Argoverse 2 \cite{wilson_argoverse_2023}                                                & Object Detection      & 26               & Outdoor          & 1,000 scenarios           \\
+		JRDB \cite{Martín-Martín_Patel_Rezatofighi_Shenoi_Gwak_Frankel_Sadeghian_Savarese_2023} & Object Detection      & 1                & Indoor/Outdoor   & $\sim$1 hour @ 30fps      \\
+		SUN RGB-D \cite{Song_Lichtenberg_Xiao_2015}                                             & Both                  & 37               & Indoor           & 10,335 images             \\
+		SemanticKITTI \cite{Behley_Garbade_Milioto_Quenzel_Behnke_Stachniss_Gall_2019}          & Semantic Segmentation & 28               & Outdoor          & 43,000+ scans             \\
+		Toronto-3D \cite{Tan_Qin_Ma_Li_Du_Cai_Yang_Li_2020}                                     & Semantic Segmentation & 8                & Outdoor          & $\sim$75M points          \\
+		Semantic3D \cite{Hackel_Savinov_Ladicky_Wegner_Schindler_Pollefeys_2017}                & Semantic Segmentation & 8                & Outdoor          & $\sim$400M pts/scan       \\
+		nuScenes-lidarseg \cite{Fong_Mohan_Hurtado_Zhou_Caesar_Beijbom_Valada_2022}             & Semantic Segmentation & 32               & Outdoor          & 40,000 scans              \\
 		\bottomrule
 	\end{tabular}
 	\caption{Overview of datasets for 3D object detection and semantic segmentation}

@@ -6,6 +6,7 @@
 \section{Limitations}
 
 We weren't able to properly integrate a \ac{PC} face detection model for the following reasons:
+
 \begin{itemize}
 	\item Training a 3D based model is expensive computation wise and time wise so we could only use pretrained things.
 	\item Face detection is not addressed specifically in tasks so we tried to use the pedestrian category.
@@ -16,7 +17,7 @@ We weren't able to properly integrate a \ac{PC} face detection model for the fol
 \par The 3D AI-based Object Detection and general \ac{PC} processing python ecosystem is not that mature yet.
 There are great tools that are either still at an early research phase or not properly maintained. This makes them unsuitable for software in production environments. A notable exception was the \emph{Open3D} package.
 
-\par Face detection as a specific task is not that popular in Point cloud related settings. Mostly pedestrians in an outdoor setting are actually the target of the latest models. There has been more focus in face recognition tasks as point clouds can provide richer features of a face than the two-dimensional equivalent and can therefore improve the effectiveness of face recognition systems.
+\par Face detection as a specific task is not that popular in \ac{PC} related settings. Mostly pedestrians in an outdoor setting are actually the target of the latest models. There has been more focus in face recognition tasks as point clouds can provide richer features of a face than the two-dimensional equivalent and can therefore improve the effectiveness of face recognition systems.
 
 \par Most of the attention is on traffic settings, other use cases remain mostly unexplored e.g. indoors 3D cameras.
 In \cite{wang_voxel-rcnn-complex_2022} the authors improve upon an existing model to make it more suitable for complex traffic conditions.
