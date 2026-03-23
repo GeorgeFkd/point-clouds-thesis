@@ -2,6 +2,7 @@
 \usetheme{Madrid}
 
 \usepackage{graphicx}
+\usepackage{booktabs}
 
 % ── Fill in your details ──────────────────────────────────────────
 \newcommand{\thesistitle}{Privacy awareness in point clouds using AI-based object detection}
@@ -55,37 +56,96 @@
 	\tableofcontents
 \end{frame}
 
+\section{Background Information}
+\begin{frame}{Background Information}
+	\begin{itemize}
+		\item \textbf{Point clouds} are sets of 3D points $(x, y, z)$, optionally enriched with color and reflectance data, captured by devices such as LiDAR cameras and stereo-depth cameras. We use the Intel RealSense D435I.
+		\item \textbf{Object detection} classifies objects and finds their spatial bounds, a rectangle in 2D and a 3D bounding box in point clouds.
+		\item \textbf{Face detection} is a specific case of object detection, not to be confused with face recognition which matches faces against a database of known identities.
+		\item \textbf{Semantic segmentation} assigns a class label to every point in the cloud, rather than predicting bounding boxes around objects.
+		\item \textbf{Privacy} in images is most commonly achieved using blurring and pixelation. Such simple methods are not enough to remove identifiable information \cite{Reid_Samangooei_Chen_Nixon_Ross_2013} and we will see more effective approaches.
+	\end{itemize}
+
+	\vfill
+	{\small \textit{Note: A bug was found in the RealSense SDK's point-cloud file export during this work and \href{https://github.com/realsenseai/librealsense/pull/14711}{I contributed it upstream as a fix}.}}
+\end{frame}
+
+
+
+\section{3D Object detection \& Semantic Segmentation models}
+\begin{frame}{3D Object Detection \& Semantic Segmentation Models}
+	\begin{itemize}
+		\item \textbf{PointNet} \cite{qi_pointnet_2017} --- foundational work, operates directly on raw point clouds using MLPs and max-pooling to achieve permutation invariance. Extended by \textbf{PointNet++} with hierarchical local feature extraction.
+		\item \textbf{PointPillars} \cite{Lang_Vora_Caesar_Zhou_Yang_Beijbom_2019} --- slices the point cloud into vertical pillars instead of full voxelization, achieving 16ms detection. Used in our experiments.
+		\item \textbf{Complex-YOLO} \cite{Simony_Milzy_Amendey_Gross_2018} --- projects the point cloud to a Bird's Eye View and feeds it into a adapted YOLO architecture, achieving 50fps.
+		\item \textbf{RandLA-Net} \cite{Hu_Yang_Xie_Rosa_Guo_Wang_Trigoni_Markham_2020} and \textbf{KP-FCNN} \cite{Thomas_Qi_Deschaud_Marcotegui_Goulette_Guibas_2019} --- semantic segmentation models used in our experiments with pretrained weights.
+		\item Other notable architectures include Transformer-based models such as \textbf{PointFormer} \cite{pan_3d_2021}, graph-based models such as \textbf{Point-GNN} \cite{shi_point-gnn_2020}, and two-stage detectors such as \textbf{PointRCNN} \cite{shi_pointrcnn_2019}.
+	\end{itemize}
+\end{frame}
+
 \section{Related Work}
 \begin{frame}{Related Work}
-	\cite{Zhao_Zhang_Demiris_2024} 3PFS: End-to-end pipeline for pedestrian privacy in 2D videos.
+	Mostly 2D based, to the best of our knowledge there are no 3D anonymization pipeline implementations.
+	\cite{Zhao_Zhang_Demiris_2024} 3PFS: End-to-end pipeline for pedestrian privacy in 2D videos
 	\begin{figure}[htb]
 		\includegraphics[width=\textwidth, height=0.7\textheight, keepaspectratio]{figs/3PFS-Related-Work.pdf}
 	\end{figure}
 \end{frame}
-
-\section{3D Object Detection Models}
-\begin{frame}{3D Object Detection Models}
-	I can mention some models here, the most influential ones.
-\end{frame}
-
 \begin{frame}{Related Work}
 	Enhanced privacy preservation work at: \cite{Kunchala_Bouroche_Schoen-Phelan_2023}
 	\begin{figure}[htb]
-		\includegraphics[width=\textwidth, height=0.7\textheight, keepaspectratio]{figs/anonymized-pedestrian-video-data.pdf}
+		\includegraphics[width=\textwidth, height=0.5\textheight, keepaspectratio]{figs/anonymized-pedestrian-video-data.pdf}
 	\end{figure}
+	Alternative approach to privacy:
+	In the work of \cite{Ohno_Ukyo_Amano_Rizk_Yamaguchi_2023}, colorless LiDAR cameras were used in order to
+	ensure pedestrian privacy.
 \end{frame}
 
 \section{Datasets}
 \begin{frame}{Datasets for Point Cloud Object Detection}
 	Most 3D detection datasets target autonomous driving captured by LiDAR. Note: pedestrians are a category but not faces.
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{lllll}
+			\toprule
+			\textbf{Dataset}  & \textbf{Task}         & \textbf{Classes} & \textbf{Setting} & \textbf{Size}             \\
+			\midrule
+			KITTI             & Object Detection      & 3                & Outdoor          & 7,480 frames              \\
+			nuScenes          & Object Detection      & 23               & Outdoor          & 1,000 scenes $\times$ 20s \\
+			ONCE              & Object Detection      & 15               & Outdoor          & 1M scenes                 \\
+			Argoverse 2       & Object Detection      & 26               & Outdoor          & 1,000 scenarios           \\
+			JRDB              & Object Detection      & 1                & Indoor/Outdoor   & $\sim$1 hour @ 30fps      \\
+			SUN RGB-D         & Both                  & 37               & Indoor           & 10,335 images             \\
+			SemanticKITTI     & Semantic Segmentation & 28               & Outdoor          & 43,000+ scans             \\
+			Toronto-3D        & Semantic Segmentation & 8                & Outdoor          & $\sim$75M points          \\
+			Semantic3D        & Semantic Segmentation & 8                & Outdoor          & $\sim$400M pts/scan       \\
+			nuScenes-lidarseg & Semantic Segmentation & 32               & Outdoor          & 40,000 scans              \\
+			\bottomrule
+		\end{tabular}
+	}
+	% \begin{tabular}{lllll}
+	% 	\toprule
+	% 	\textbf{Dataset}                                                                        & \textbf{Task}         & \textbf{Classes} & \textbf{Setting} & \textbf{Size}             \\
+	% 	\midrule
+	% 	KITTI \cite{geiger_are_2012}                                                            & Object Detection      & 3                & Outdoor          & 7,480 frames              \\
+	% 	nuScenes \cite{Caesar_Bankiti_Lang_Vora_Liong_Xu_Krishnan_Pan_Baldan_Beijbom_2020}      & Object Detection      & 23               & Outdoor          & 1,000 scenes $\times$ 20s \\
+	% 	ONCE \cite{mao_one_2021}                                                                & Object Detection      & 15               & Outdoor          & 1M scenes                 \\
+	% 	Argoverse 2 \cite{wilson_argoverse_2023}                                                & Object Detection      & 26               & Outdoor          & 1,000 scenarios           \\
+	% 	JRDB \cite{Martín-Martín_Patel_Rezatofighi_Shenoi_Gwak_Frankel_Sadeghian_Savarese_2023} & Object Detection      & 1                & Indoor/Outdoor   & $\sim$1 hour @ 30fps      \\
+	% 	SUN RGB-D \cite{Song_Lichtenberg_Xiao_2015}                                             & Both                  & 37               & Indoor           & 10,335 images             \\
+	% 	SemanticKITTI \cite{Behley_Garbade_Milioto_Quenzel_Behnke_Stachniss_Gall_2019}          & Semantic Segmentation & 28               & Outdoor          & 43,000+ scans             \\
+	% 	Toronto-3D \cite{Tan_Qin_Ma_Li_Du_Cai_Yang_Li_2020}                                     & Semantic Segmentation & 8                & Outdoor          & $\sim$75M points          \\
+	% 	Semantic3D \cite{Hackel_Savinov_Ladicky_Wegner_Schindler_Pollefeys_2017}                & Semantic Segmentation & 8                & Outdoor          & $\sim$400M pts/scan       \\
+	% 	nuScenes-lidarseg \cite{Fong_Mohan_Hurtado_Zhou_Caesar_Beijbom_Valada_2022}             & Semantic Segmentation & 32               & Outdoor          & 40,000 scans              \\
+	% 	\bottomrule
+	% \end{tabular}
 
-	\begin{itemize}
-		\item \textbf{KITTI} \cite{geiger_are_2012}: one of the earliest LiDAR benchmarks, classes: car, pedestrian, cyclist
-		\item \textbf{ONCE} \cite{mao_one_2021}: 1 million LiDAR scenes, 15 annotated classes
-		\item \textbf{Argoverse 2} \cite{wilson_argoverse_2023}: 26-category taxonomy including rare classes such as strollers, wheelchairs, and animals
-		\item \textbf{JRDB} \cite{Martín-Martín_Patel_Rezatofighi_Shenoi_Gwak_Frankel_Sadeghian_Savarese_2023}: $\sim$1 hour of sensor data from a mobile robot, annotated with 3D bounding boxes for pedestrians
-		\item \textbf{SUN RGB-D} \cite{Song_Lichtenberg_Xiao_2015}: 10,335 RGB-D images with 2D and 3D annotations across multiple sensors, suitable for general scene understanding
-	\end{itemize}
+	% \begin{itemize}
+	% 	\item \textbf{KITTI} \cite{geiger_are_2012}: one of the earliest LiDAR benchmarks, classes: car, pedestrian, cyclist
+	% 	\item \textbf{ONCE} \cite{mao_one_2021}: 1 million LiDAR scenes, 15 annotated classes
+	% 	\item \textbf{Argoverse 2} \cite{wilson_argoverse_2023}: 26-category taxonomy including rare classes such as strollers, wheelchairs, and animals
+	% 	\item \textbf{JRDB} \cite{Martín-Martín_Patel_Rezatofighi_Shenoi_Gwak_Frankel_Sadeghian_Savarese_2023}: $\sim$1 hour of sensor data from a mobile robot, annotated with 3D bounding boxes for pedestrians
+	% 	\item \textbf{SUN RGB-D} \cite{Song_Lichtenberg_Xiao_2015}: 10,335 RGB-D images with 2D and 3D annotations across multiple sensors, suitable for general scene understanding
+	% \end{itemize}
 \end{frame}
 
 \begin{frame}{Datasets-Visual Overview}
