@@ -1,13 +1,6 @@
-#!/usr/bin/env python3
-"""
-Face Detection 2D → Point Cloud 3D with PLY Export (PyVista)
-IMPORTANT: Exports point clouds with BLURRED FACES for privacy
-"""
-
 from effects import *
     
 import subprocess
-from models import Learning3dDetector
 import pyrealsense2 as rs
 import numpy as np
 import cv2
@@ -105,18 +98,6 @@ class DataExporter:
         return filepath
 
 
-class Processor2D:
-    @classmethod
-    def gaussian_blur(cls, image, x1, x2, y1, y2, blur_amount=51):
-        img = image.copy()
-
-        region = img[y1:y2, x1:x2]
-        if region.size > 0:
-            region_blurred = cv2.GaussianBlur(region, (blur_amount, blur_amount), 0)
-            img[y1:y2, x1:x2] = region_blurred
-            return img
-
-
 class EventBus:
     def __init__(self):
         self._key_handlers = {}
@@ -143,7 +124,7 @@ class EventBus:
 class Application:
 
     def get_torch_ckpts(self):
-        """Download and return checkpoint paths"""
+        """Download and return checkpoint paths from open3d-ml releases"""
         kpconv_url = "https://storage.googleapis.com/open3d-releases/model-zoo/kpconv_semantickitti_202009090354utc.pth"
         randlanet_url = "https://storage.googleapis.com/open3d-releases/model-zoo/randlanet_semantickitti_202201071330utc.pth"
 
@@ -175,10 +156,9 @@ class Application:
             "label": np.zeros(len(points), dtype=np.int32),
         }
 
-        # Run inference
         if model == "randlanet":
             results = self.pipeline_randlanet.run_inference(data)
-        else:  # kpfcnn
+        else:  
             results = self.pipeline_kpfcnn.run_inference(data)
 
         pred_labels = (results["predict_labels"] + 1).astype(np.int32)
@@ -236,7 +216,7 @@ class Application:
         try:
             self.ml3d_vis.visualize(vis_points)
         except Exception as e:
-            print("Error is:", e)
+            print("Open3D-ML Error is:", e)
 
     def __init__(self):
         self.camera = (
@@ -266,22 +246,18 @@ class Application:
         if enable_semantic_segmentation:
             print("Loading semantic segmentation models...")
 
-            # Get checkpoint paths
             ckpt_path_r, ckpt_path_k = self.get_torch_ckpts()
 
-            # Load RandLANet
             print("  Loading RandLANet...")
             model_r = ml3d.models.RandLANet(ckpt_path=ckpt_path_r)
             self.pipeline_randlanet = ml3d.pipelines.SemanticSegmentation(model_r)
             self.pipeline_randlanet.load_ckpt(model_r.cfg.ckpt_path)
 
-            # Load KPFCNN
             print("  Loading KPFCNN...")
             model_k = ml3d.models.KPFCNN(ckpt_path=ckpt_path_k)
             self.pipeline_kpfcnn = ml3d.pipelines.SemanticSegmentation(model_k)
             self.pipeline_kpfcnn.load_ckpt(model_k.cfg.ckpt_path)
 
-            # Setup ML3D visualizer
             kitti_labels = ml3d.datasets.SemanticKITTI.get_label_to_names()
             self.label_names = kitti_labels
 
@@ -298,7 +274,6 @@ class Application:
         """Visualize 3D bounding boxes on point cloud"""
     
         print(f"Results are: {results}")
-        # Extract results
         boxes = results.get("predict_bboxes", np.array([]))
         scores = results.get("predict_scores", np.array([]))
         labels = results.get("predict_labels", np.array([]))
@@ -324,7 +299,6 @@ class Application:
             class_name = f"class_{label}"
             print(f"  {class_name}: {score:.2f} at ({x:.2f}, {y:.2f}, {z:.2f})")
 
-            # Create 3D bounding box
             R = o3d.geometry.get_rotation_matrix_from_xyz((0, 0, yaw))
             bbox = o3d.geometry.OrientedBoundingBox(
                 center=[x, y, z], R=R, extent=[w, h, d]
@@ -346,6 +320,7 @@ class Application:
         )
 
     def test_detection_3d(self):
+        model_used = self.pointpillars_detector
         while True:
             success, depth, color = self.camera.read_frame()
 
@@ -356,7 +331,7 @@ class Application:
             pointcloud = self.convert_frame_to_o3d_pointcloud(depth, color)
 
             # Run detection
-            results = self.pointpillars_detector.detect(pointcloud)
+            results = model_used.detect(pointcloud)
 
             # Visualize
             self.visualize_detections_3d(pointcloud, results)

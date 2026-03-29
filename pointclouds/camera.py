@@ -37,10 +37,6 @@ class CameraReader(metaclass=ABCMeta):
         pass
 
 
-class StreamingCamera(CameraReader):
-    pass
-
-
 class FakeCamera(CameraReader):
     """Fake camera that reads from a PLY file"""
 
